@@ -1,0 +1,37 @@
+# DORMANT — created in Phase 5a, activated in Phase 5b.
+# This repo has no GitHub remote yet, so this workflow never fires. Once the repo is
+# pushed (Phase 5b), it runs the offline eval gate on every PR and nightly. Do NOT push
+# or trigger it before then. Runs fully in MOCK_MODE — no cloud, no secrets.
+name: eval-gate
+
+on:
+  pull_request:
+  schedule:
+    - cron: "0 7 * * *" # nightly 07:00 UTC
+  workflow_dispatch:
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    env:
+      MOCK_MODE: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync backend (with dev deps)
+        working-directory: backend
+        run: uv sync --group dev
+
+      - name: Lint (backend + evals)
+        working-directory: backend
+        run: uv run ruff check . ../evals
+
+      - name: Run tests + offline eval gate
+        working-directory: backend
+        run: uv run pytest tests ../evals -q

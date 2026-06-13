@@ -103,10 +103,19 @@ uv run python -m secops.app run --incident "Critical RCE in gateway"   # smoke r
 4. **Frontend** — Next.js + shadcn landing page + polling dashboard (agent rail, findings
    feed, cost panel, similar-incidents, guardrail flags, threats/compliance/history).
    **DoD:** dashboard renders incidents/findings/plan/cost live against the API.
-5. **Evals + Azure deploy** — LangSmith + AgentEvals + pytest eval harness (incl.
-   guardrail catch-rate, memory-recall, cost regression) with a CI gate; Azure deploy
-   (Static Web Apps + Container Apps + ACR + Postgres), managed identity, spend cap.
-   **DoD:** CI eval gate passes; app deployed with managed identity (no secrets).
+5. **Evals + Azure deploy** — split into two sub-phases:
+   - **5a. Evaluation harness (LOCAL, mock-first)** — an offline `evals/` suite over the
+     graph: a versioned golden dataset, deterministic + LLM-judge + theme-specific
+     evaluators (guardrail catch-rate, memory-recall, cost regression), thresholds set
+     against a **measured** baseline, and a **dormant** `.github/workflows/eval.yml` CI
+     file (created, not pushed/activated). `langsmith` only (no AgentEvals).
+     **DoD:** `cd backend && uv run pytest ../evals -q` runs the golden set, scores every
+     evaluator, and asserts thresholds — passing offline (the LLM-judge skips cleanly
+     without a key); baseline recorded in `evals/BASELINE.md`; one clean local commit.
+   - **5b. Azure deploy + data wiring** — make the data-mode toggle functional, Postgres
+     checkpointer, Azure deploy (Static Web Apps + Container Apps + ACR + Postgres),
+     managed identity, spend cap, and push + activate the CI eval gate.
+     **DoD:** CI eval gate passes; app deployed with managed identity (no secrets).
 
 ## Installed skills & when to use each
 Skill packs `obra/superpowers` and `mattpocock/skills` are installed under
