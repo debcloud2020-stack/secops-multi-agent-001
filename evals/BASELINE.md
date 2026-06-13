@@ -34,3 +34,20 @@ cd backend && uv run python ../evals/report_baseline.py
 - `cost_regression`: **`COST_CEILING = 1700`** = round-up of max(1359) × 1.25 (≈1699).
 - `plan_quality` (only when a judge model is configured): `mean ≥ baseline_mean − 0.5`
   on the 1–5 scale. Skipped offline.
+
+## Judge baseline (Phase 5b-2 — pending a real model run)
+
+The `plan_quality` LLM-judge has not been baselined yet (it requires `OPENROUTER_API_KEY`,
+which is set manually in the deployed environment, not locally). `JUDGE_MEAN_FLOOR`
+defaults to **3.0** and is **env-overridable**. To record the real baseline once a key is
+available:
+
+```bash
+cd backend && MOCK_MODE=false OPENROUTER_API_KEY=... \
+  LLM_MODEL_CHEAP=... LLM_MODEL_STRONG=... \
+  uv run python ../evals/run_judge_baseline.py
+```
+
+It prints `mean=<n>` and the suggested floor (`mean − 0.5`). Record `mean` here, then set
+`JUDGE_MEAN_FLOOR=<mean − 0.5>` (env in CI, or edit `test_agents.py`).
+

@@ -87,7 +87,10 @@ def _synthetic(name: str, settings) -> list[dict]:
     """Query the synthetic custom table (Logs Ingestion API target) with the same client."""
     if not settings.azure_workspace_id:
         raise RuntimeError("AZURE_WORKSPACE_ID not set (synthetic table query)")
-    kql = f"{SYNTHETIC_TABLE} | where Detection_s == '{name}' | project-away TimeGenerated"
+    kql = (
+        f"{SYNTHETIC_TABLE} | where Detection == '{name}' "
+        "| project Row | evaluate bag_unpack(Row)"
+    )
     return _live(name, kql, settings)
 
 

@@ -1,0 +1,38 @@
+# Frontend deploy: build the Next.js static export with the deployed API URL inlined at
+# build time, then upload the prebuilt out/ to Azure Static Web Apps.
+#
+# Manual (workflow_dispatch): run after the backend is deployed and BACKEND_URL is set.
+name: deploy-frontend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build static export (NEXT_PUBLIC_API_URL baked in)
+        working-directory: apps/web
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.BACKEND_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy prebuilt out/ to Static Web Apps
+        uses: azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN }}
+          action: upload
+          app_location: apps/web/out
+          skip_app_build: true
+          output_location: ""

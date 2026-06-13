@@ -1,0 +1,9 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "_comment": "Non-secret defaults. Secrets (demoPassword, postgresAdminPassword, openRouterApiKey) are passed at deploy time by deploy.sh from your shell env — NEVER put them here.",
+  "parameters": {
+    "prefix": { "value": "secops" },
+    "corsOrigins": { "value": "http://localhost:3000" }
+  }
+}

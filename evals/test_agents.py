@@ -18,7 +18,9 @@ from evals.runner import load_golden
 
 # --- Thresholds (derived from BASELINE.md — do not invent; re-measure if the graph changes) ---
 COST_CEILING = 1700  # round-up of max baseline cost 1359 × 1.25 (≈1699)
-JUDGE_MEAN_FLOOR = 3.0  # 1–5 scale; when a real baseline is measured, set to baseline_mean − 0.5
+# 1–5 scale. Default 3.0 until a real judge run is recorded; then set JUDGE_MEAN_FLOOR
+# (env) to baseline_mean − 0.5. Measure with: uv run python ../evals/run_judge_baseline.py
+JUDGE_MEAN_FLOOR = float(os.getenv("JUDGE_MEAN_FLOOR", "3.0"))
 
 EXAMPLES = load_golden()
 IDS = [e["id"] for e in EXAMPLES]

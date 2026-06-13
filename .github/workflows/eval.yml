@@ -1,7 +1,6 @@
-# DORMANT — created in Phase 5a, activated in Phase 5b.
-# This repo has no GitHub remote yet, so this workflow never fires. Once the repo is
-# pushed (Phase 5b), it runs the offline eval gate on every PR and nightly. Do NOT push
-# or trigger it before then. Runs fully in MOCK_MODE — no cloud, no secrets.
+# Offline eval gate — runs the golden-set suite on every PR + nightly, fully in MOCK_MODE
+# (no cloud, no secrets). Created dormant in Phase 5a; active since the repo was pushed in
+# Phase 5b-2.
 name: eval-gate
 
 on:
