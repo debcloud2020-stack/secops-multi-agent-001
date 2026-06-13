@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     demo_password: str | None = None
     api_host: str = "127.0.0.1"
     api_port: int = 8000
+    # Comma-separated browser origins allowed via CORS (for the Next.js dev server).
+    cors_origins: str = "http://localhost:3000"
 
 
 _settings: Settings | None = None

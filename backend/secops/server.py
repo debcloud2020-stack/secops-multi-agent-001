@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Path
+from fastapi.middleware.cors import CORSMiddleware
 from langgraph.types import Command
 
 from secops.app import _dedupe_cves
@@ -59,6 +60,16 @@ def require_password(authorization: str | None = Header(default=None)) -> None:
 
 
 app = FastAPI(title="SecOps Multi-Agent API", dependencies=[Depends(require_password)])
+
+# CORS so the browser (Next.js dev on :3000) can call the API. The Authorization header
+# and OPTIONS preflight are allowed; credentials are not used (Bearer header only).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in get_settings().cors_origins.split(",") if o.strip()],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=False,
+)
 
 
 # --- Helpers -------------------------------------------------------------------------
