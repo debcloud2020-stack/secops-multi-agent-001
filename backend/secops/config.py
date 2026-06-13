@@ -6,7 +6,12 @@ env placeholders — never hardcode OpenRouter model IDs here.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Backend package root (…/backend), used to resolve default data paths.
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
 
 
 class Settings(BaseSettings):
@@ -32,6 +37,22 @@ class Settings(BaseSettings):
 
     # Hard bound on supervisor routing iterations (loop guard / spend cap).
     max_supervisor_steps: int = 12
+
+    # --- Phase 2: RAG + memory + guardrail ---
+    # Local HuggingFace embedding model (a local resource — used in mock and live mode).
+    embed_model: str = "BAAI/bge-small-en-v1.5"
+    # LanceDB directory (knowledge + memory tables). Overridable for tests.
+    lancedb_dir: str = str(_BACKEND_ROOT / ".data" / "lancedb")
+    rag_top_k: int = 4
+    memory_top_k: int = 3
+    # Guardrail: enabled scans untrusted text; block=false keeps the run flowing
+    # (flag-not-block) so suspicious content is quarantined, not executed.
+    guardrail_enabled: bool = True
+    guardrail_block: bool = False
+
+    # Optional live-path settings (only used when mock_mode is false).
+    azure_workspace_id: str | None = None
+    nvd_api_key: str | None = None
 
 
 _settings: Settings | None = None

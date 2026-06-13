@@ -1,0 +1,16 @@
+[
+  {
+    "TimeGenerated": "2026-06-13T08:02:00Z",
+    "UserPrincipalName": "j.doe@contoso.com",
+    "IPAddress": "198.51.100.20",
+    "Location": "Dublin, IE",
+    "DeviceDetail": "Windows 11 / Edge"
+  },
+  {
+    "TimeGenerated": "2026-06-13T08:41:00Z",
+    "UserPrincipalName": "j.doe@contoso.com",
+    "IPAddress": "203.0.113.66",
+    "Location": "Singapore, SG",
+    "DeviceDetail": "Linux / curl"
+  }
+]

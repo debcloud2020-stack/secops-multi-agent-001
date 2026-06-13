@@ -85,15 +85,28 @@ uv run python -m secops.app run --incident "Critical RCE in gateway"   # smoke r
    **DoD:** the CLI visits all five agents in order and prints findings + a plan
    (offline, also works with a real key); CLAUDE.md, subagents, and both skill packs
    installed; a smoke test asserts five-visit + plan; one clean local commit.
-2. **Real tool integrations** — Azure Sentinel logs; NVD/KEV/EPSS; scanners.
-   **DoD:** agents produce findings from real sources behind the `mock_mode` switch.
-3. **Agentic RAG** — LlamaIndex + LanceDB retrieval feeding agents.
-   **DoD:** retrieval-augmented findings with citations; offline fixtures for tests.
-4. **Guardrail + memory + cost + evals** — prompt-injection guardrail, long-term
-   memory, cost optimization, eval harness (pytest + LangSmith).
-   **DoD:** guardrail blocks documented injection classes; evals gate quality in CI.
-5. **Frontend + Azure deploy** — Next.js + shadcn polling UI; containerized deploy.
-   **DoD:** UI renders incidents/findings/plan; deployed with managed identity.
+2. **Tools, RAG, and the feature layers** — real (mock-defaulted) tools (Azure
+   Monitor/Sentinel KQL detections, NVD/KEV/EPSS enrichment, trivy/pip-audit), agentic
+   RAG (LlamaIndex + LanceDB, local HF embeddings), and the guardrail / long-term memory
+   / cost-accounting logic that were no-op state fields in Phase 1, all wired into the
+   graph (`memory_recall → guardrail → supervisor ⇄ agents → memory_write`).
+   **DoD:** with `MOCK_MODE=true` the CLI runs end-to-end and prints findings, a
+   priority-sorted `cve_matches` table, similar past incidents, guardrail flags, and a
+   cost summary; RAG builds offline; an injected log line is flagged (not obeyed); a
+   similar incident recalls the prior one; tool/guardrail/memory/cost/smoke tests pass.
+3. **FastAPI API layer** — password middleware + polling endpoints (`/runs`,
+   `/runs/{id}`, `/threats`, `/compliance`, `/incidents`) + curated incidents, **plus the
+   human-in-the-loop (HITL) approval interrupt and the `POST /runs/{id}/approve` resume
+   flow** (LangGraph `interrupt` before the incident-response plan).
+   **DoD:** runs start/poll over HTTP behind the password gate; an interrupted run
+   resumes via `/approve`.
+4. **Frontend** — Next.js + shadcn landing page + polling dashboard (agent rail, findings
+   feed, cost panel, similar-incidents, guardrail flags, threats/compliance/history).
+   **DoD:** dashboard renders incidents/findings/plan/cost live against the API.
+5. **Evals + Azure deploy** — LangSmith + AgentEvals + pytest eval harness (incl.
+   guardrail catch-rate, memory-recall, cost regression) with a CI gate; Azure deploy
+   (Static Web Apps + Container Apps + ACR + Postgres), managed identity, spend cap.
+   **DoD:** CI eval gate passes; app deployed with managed identity (no secrets).
 
 ## Installed skills & when to use each
 Skill packs `obra/superpowers` and `mattpocock/skills` are installed under

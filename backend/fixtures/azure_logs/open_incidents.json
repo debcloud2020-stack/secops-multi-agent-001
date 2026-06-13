@@ -1,0 +1,18 @@
+[
+  {
+    "IncidentNumber": 4821,
+    "Title": "Suspected RCE on edge gateway",
+    "Severity": "High",
+    "Status": "Active",
+    "CreatedTime": "2026-06-13T09:20:00Z",
+    "Owner": "soc-tier2"
+  },
+  {
+    "IncidentNumber": 4822,
+    "Title": "Anomalous privileged role assignment",
+    "Severity": "Medium",
+    "Status": "Active",
+    "CreatedTime": "2026-06-13T09:25:00Z",
+    "Owner": "unassigned"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "TimeGenerated": "2026-06-13T09:22:33Z",
+    "Initiator": "svc-gateway@contoso.com",
+    "Operation": "Add member to role",
+    "Role": "Global Administrator",
+    "Target": "attacker-note@contoso.com",
+    "Result": "success"
+  }
+]

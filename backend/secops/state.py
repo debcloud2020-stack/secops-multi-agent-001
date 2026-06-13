@@ -1,8 +1,4 @@
-"""Graph state and domain models.
-
-Some fields (``similar_past``, ``guardrail_flags``, ``cost``) are declared now but are
-no-ops in Phase 1 — they belong to later phases (RAG memory, guardrail, cost tracking).
-"""
+"""Graph state and domain models."""
 
 from __future__ import annotations
 
@@ -11,6 +7,19 @@ from typing import Annotated, Literal
 
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
+
+
+def merge_cost(left: dict, right: dict) -> dict:
+    """Reducer that merges per-node cost dicts and keeps a running ``total``.
+
+    Each node contributes ``{"per_agent": {name: tokens}, "total": tokens}``; the
+    reducer sums overlapping agents and totals so concurrent/looping nodes accumulate.
+    """
+    out: dict = {"per_agent": dict(left.get("per_agent", {})), "total": left.get("total", 0)}
+    for name, tokens in right.get("per_agent", {}).items():
+        out["per_agent"][name] = out["per_agent"].get(name, 0) + tokens
+    out["total"] = out.get("total", 0) + right.get("total", 0)
+    return out
 
 # Agent identifiers + the terminal sentinel, reused for routing and the visit order.
 AgentName = Literal[
@@ -40,13 +49,15 @@ AGENT_ORDER: list[AgentName] = [
 
 
 class CVEMatch(BaseModel):
-    """A matched CVE with optional scores (mock values in Phase 1)."""
+    """A matched CVE with enrichment scores and a computed priority."""
 
     cve_id: str
     summary: str = ""
     cvss: float | None = None
     epss: float | None = None
-    kev: bool = False
+    in_kev: bool = False
+    known_ransomware: bool = False
+    priority: float = 0.0
 
 
 class Finding(BaseModel):
@@ -75,6 +86,8 @@ class SecOpsState(BaseModel):
     messages: Annotated[list, add_messages] = Field(default_factory=list)
     incident: Incident = Field(default_factory=Incident)
     findings: Annotated[list[Finding], operator.add] = Field(default_factory=list)
+    # First-class CVE table (PLAN.md §5/§9/§10), separate from per-finding context.
+    cve_matches: Annotated[list[CVEMatch], operator.add] = Field(default_factory=list)
 
     # Routing / control
     next_agent: RouteTarget | None = None
@@ -82,7 +95,7 @@ class SecOpsState(BaseModel):
     step: int = 0
     response_plan: str | None = None
 
-    # Declared for later phases — unused / no-op in Phase 1.
+    # Feature layers (Phase 2).
     similar_past: list[dict] = Field(default_factory=list)
-    guardrail_flags: list[str] = Field(default_factory=list)
-    cost: dict = Field(default_factory=dict)
+    guardrail_flags: Annotated[list[str], operator.add] = Field(default_factory=list)
+    cost: Annotated[dict, merge_cost] = Field(default_factory=dict)

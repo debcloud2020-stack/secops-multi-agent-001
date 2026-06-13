@@ -1,7 +1,11 @@
-# SecOps Multi-Agent — backend (Phase 1, mock mode)
+# SecOps Multi-Agent — backend (Phase 2, mock mode)
 
-LangGraph supervisor that routes through five cybersecurity agent stubs over mock data.
-Phase 1 is fully offline: no cloud, no real LLM (the LLM is stubbed).
+LangGraph supervisor that routes through five cybersecurity agents over mock-defaulted
+real tools, with agentic RAG (LlamaIndex + LanceDB, local HF embeddings), a
+prompt-injection guardrail, long-term memory, and token-cost accounting. Graph flow:
+`memory_recall → guardrail → supervisor ⇄ [5 agents] → memory_write`. Default
+`MOCK_MODE=true` is fully offline (LLM stubbed); the first RAG/memory use downloads the
+`bge-small-en-v1.5` embedding model (~130 MB) to `~/.cache/huggingface`, then runs offline.
 
 ## Setup
 
@@ -15,31 +19,43 @@ uv sync
 
 ```bash
 uv run python -m secops.app run --incident "Critical RCE in gateway"
+uv run python -m secops.app index   # (re)build the RAG knowledge index in LanceDB
 ```
 
-Prints the agents visited (log_monitor → threat_intel → vuln_scanner → policy_checker →
-incident_response), the per-agent findings, and a synthesized response plan.
+`run` prints: agents visited (log_monitor → threat_intel → vuln_scanner →
+policy_checker → incident_response), similar past incidents, per-agent findings, a
+priority-sorted CVE table (CVSS/EPSS/KEV/ransomware/priority), guardrail flags, a cost
+summary, and the synthesized response plan.
 
-### Real LLM (optional)
+### Real LLM / live tools (optional)
 
 Copy `.env.example` to `.env`, set `MOCK_MODE=false`, `OPENROUTER_API_KEY`, and the
-`LLM_MODEL_CHEAP` / `LLM_MODEL_STRONG` model IDs. The same command then calls OpenRouter.
+`LLM_MODEL_CHEAP` / `LLM_MODEL_STRONG` model IDs to call OpenRouter. With `MOCK_MODE=false`
+the tools also try their live paths (Azure Monitor / NVD-KEV-EPSS / trivy+pip-audit) and
+fall back to the mock fixtures on any failure. Embeddings are always the local HF model.
 
 ## Verify
 
 ```bash
 uv run ruff check .      # lint (blocking)
 uv run pytest -q         # tests + smoke (blocking)
-uv run mypy secops       # type-check (advisory — non-blocking in Phase 1)
+uv run mypy secops       # type-check (advisory — non-blocking)
 ```
+
+RAG/memory tests auto-skip if the HF embedding model can't be loaded (offline/CI).
 
 ## Layout
 
-- `secops/config.py` — pydantic-settings configuration
+- `secops/config.py` — pydantic-settings (mock_mode, embeddings, LanceDB, guardrail)
 - `secops/llm.py` — OpenRouter factories + offline stub (`OfflineChatModel`)
-- `secops/state.py` — `SecOpsState` + `Incident` / `Finding` / `CVEMatch`
-- `secops/agents.py` — supervisor router, five mock agent nodes, `route()`
-- `secops/graph.py` — `StateGraph` + `MemorySaver`
-- `secops/app.py` — CLI
-- `fixtures/mock_incident.json` — mock incident
-- `tests/test_smoke.py` — Phase 1 smoke test
+- `secops/state.py` — `SecOpsState`, `Incident`/`Finding`/`CVEMatch`, `cve_matches`, reducers
+- `secops/tools/` — `azure_logs` (KQL detections), `threat_intel` (enrich_cve), `scanner`
+- `secops/rag/index.py` — LlamaIndex + LanceDB knowledge index, `knowledge_search`
+- `secops/guardrail.py` — prompt-injection scan (pattern + optional LLM classifier)
+- `secops/memory.py` — long-term incident recall/write (LanceDB)
+- `secops/cost.py` — token estimation + accumulation into `state.cost`
+- `secops/agents.py` — supervisor, feature-layer nodes, five agent nodes, `route()`
+- `secops/graph.py` — `StateGraph` (memory → guardrail → supervisor ⇄ agents → write)
+- `secops/app.py` — CLI (`run`, `index`)
+- `fixtures/` — mock incident, tool fixtures, RAG corpus, guardrail samples
+- `tests/` — tools, guardrail, memory, rag, cost, and the extended smoke test

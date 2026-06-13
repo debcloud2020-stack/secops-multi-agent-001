@@ -1,0 +1,26 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "gateway-image:latest",
+  "Results": [
+    {
+      "Target": "gateway-image:latest (alpine 3.19.1)",
+      "Class": "os-pkgs",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2026-00000",
+          "PkgName": "gateway-core",
+          "InstalledVersion": "2.3.1",
+          "FixedVersion": "2.3.4",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-2025-31337",
+          "PkgName": "libssl3",
+          "InstalledVersion": "3.1.4-r5",
+          "FixedVersion": "3.1.4-r6",
+          "Severity": "HIGH"
+        }
+      ]
+    }
+  ]
+}

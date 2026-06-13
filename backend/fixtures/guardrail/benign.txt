@@ -1,0 +1,3 @@
+Failed sign-in burst of 37 attempts for svc-gateway@contoso.com from 203.0.113.66,
+followed by a successful login from the same address in an unfamiliar ASN. Recommend
+reviewing the account and the source IP reputation.
