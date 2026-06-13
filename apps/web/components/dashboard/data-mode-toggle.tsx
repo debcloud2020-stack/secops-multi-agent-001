@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import type { DataMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const MODES: { value: DataMode; label: string; enabled: boolean }[] = [
-  { value: "mock", label: "Mock", enabled: true },
-  { value: "live", label: "Live", enabled: false },
-  { value: "synthetic", label: "Synthetic", enabled: false },
+const MODES: { value: DataMode; label: string; hint: string }[] = [
+  { value: "mock", label: "Mock", hint: "Offline fixtures (default)" },
+  { value: "live", label: "Live", hint: "Real Azure telemetry; falls back to mock without creds" },
+  { value: "synthetic", label: "Synthetic", hint: "Synthetic custom table; falls back to mock without creds" },
 ];
 
 export function DataModeToggle({
@@ -25,8 +25,7 @@ export function DataModeToggle({
           type="button"
           size="sm"
           variant="ghost"
-          disabled={!m.enabled}
-          title={m.enabled ? undefined : "Available in a later phase"}
+          title={m.hint}
           onClick={() => onChange(m.value)}
           className={cn(
             "h-7 rounded-md px-3 text-xs",
@@ -34,7 +33,6 @@ export function DataModeToggle({
           )}
         >
           {m.label}
-          {!m.enabled && <span className="ml-1 text-[10px] text-muted-foreground">P5</span>}
         </Button>
       ))}
     </div>

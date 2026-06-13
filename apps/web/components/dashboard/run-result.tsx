@@ -10,8 +10,19 @@ import type { RunStatus } from "@/lib/types";
 
 /** All run panels driven by a RunStatus. Reused by the run page and history replay. */
 export function RunResult({ run }: { run: RunStatus }) {
+  const notices = run.data_notices ?? [];
   return (
     <div className="space-y-4">
+      {notices.length > 0 && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+          <p className="font-medium">Fell back to mock data</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-amber-700/90 dark:text-amber-300/90">
+            {notices.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <AgentRail visited={run.visited} status={run.status} />
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">

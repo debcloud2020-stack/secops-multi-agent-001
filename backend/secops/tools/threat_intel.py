@@ -28,15 +28,24 @@ def compute_priority(cvss: float, epss: float, in_kev: bool, known_ransomware: b
     return round(score, 2)
 
 
-def enrich_cve(cve_id: str) -> dict:
-    """Return enrichment for one CVE (mock fixtures by default)."""
-    settings = get_settings()
-    if settings.mock_mode:
+def enrich_cve(cve_id: str, data_mode: str = "mock", notices: list[str] | None = None) -> dict:
+    """Return enrichment for one CVE per ``data_mode``.
+
+    ``mock`` reads fixtures; ``live``/``synthetic`` call the real NVD/KEV/EPSS APIs (CVE
+    enrichment is the same regardless of how the *logs* were sourced) and fall back to the
+    mock fixture on any failure, appending a note to ``notices``.
+    """
+    if data_mode == "mock":
         return _mock(cve_id)
     try:
-        return _live(cve_id, settings)
+        return _live(cve_id, get_settings())
     except Exception as exc:  # noqa: BLE001 — fall back to mock on any failure.
-        log.warning("threat_intel live lookup failed for %s (%s); using mock", cve_id, exc)
+        log.warning("threat_intel %s lookup failed for %s (%s); using mock", data_mode, cve_id, exc)
+        if notices is not None:
+            notices.append(
+                f"threat_intel: '{data_mode}' enrichment unavailable "
+                f"({type(exc).__name__}); used mock fixtures"
+            )
         return _mock(cve_id)
 
 

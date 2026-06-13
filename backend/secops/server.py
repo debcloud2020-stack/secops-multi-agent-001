@@ -35,7 +35,7 @@ from secops.schemas import (
     RunStatusValue,
     RunSummary,
 )
-from secops.state import CVEMatch, Incident, SecOpsState
+from secops.state import CVEMatch, DataMode, Incident, SecOpsState
 from secops.tools import load_fixture
 
 # --- Singletons (single-process; see module docstring) -------------------------------
@@ -101,10 +101,10 @@ def _record_error(run_id: str, exc: Exception) -> None:
         RUNS[run_id]["error"] = "run failed"
 
 
-def _start_run(run_id: str, incident: Incident) -> None:
+def _start_run(run_id: str, incident: Incident, data_mode: DataMode) -> None:
     def task() -> None:
         try:
-            GRAPH.invoke(SecOpsState(incident=incident), _cfg(run_id))
+            GRAPH.invoke(SecOpsState(incident=incident, data_mode=data_mode), _cfg(run_id))
         except Exception as exc:  # noqa: BLE001 — surface as run error, don't crash server.
             _record_error(run_id, exc)
 
@@ -142,7 +142,8 @@ def _build_status(run_id: str) -> RunStatus:
         run_id=run_id,
         status=_status(run_id, snap),
         incident_id=reg["incident_id"],
-        data_mode=reg["data_mode"],
+        data_mode=v.get("data_mode") or reg["data_mode"],
+        data_notices=list(dict.fromkeys(v.get("data_notices", []))),  # de-duped, order-stable
         visited=v.get("visited", []),
         findings=v.get("findings", []),
         cve_matches=_dedupe_cves(v.get("cve_matches", [])),
@@ -178,7 +179,7 @@ def start_run(req: RunRequest) -> RunCreated:
             "error": None,
             "resuming": False,
         }
-    _start_run(run_id, incident)
+    _start_run(run_id, incident, req.data_mode)
     return RunCreated(run_id=run_id)
 
 

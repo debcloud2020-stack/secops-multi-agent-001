@@ -38,10 +38,15 @@ def run(title: str | None, thread_id: str = "phase2") -> SecOpsState:
     return SecOpsState.model_validate(final)
 
 
-def _dedupe_cves(matches: list[CVEMatch]) -> list[CVEMatch]:
-    """Keep the highest-priority entry per CVE id, sorted by priority desc."""
+def _dedupe_cves(matches: list) -> list[CVEMatch]:
+    """Keep the highest-priority entry per CVE id, sorted by priority desc.
+
+    Accepts ``CVEMatch`` objects (CLI) or plain dicts (checkpointer state values, which
+    deserialize to dicts) interchangeably.
+    """
     best: dict[str, CVEMatch] = {}
-    for m in matches:
+    for raw in matches:
+        m = raw if isinstance(raw, CVEMatch) else CVEMatch(**raw)
         cur = best.get(m.cve_id)
         if cur is None or m.priority > cur.priority:
             best[m.cve_id] = m

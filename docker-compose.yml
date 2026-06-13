@@ -1,0 +1,46 @@
+# Local one-command stack for Phase 5b-1: backend (FastAPI/LangGraph) + Postgres
+# checkpointer. No real secrets — override via a root .env (gitignored) or the shell.
+#
+#   DEMO_PASSWORD=changeme docker compose up --build
+#   curl -s -H "Authorization: Bearer changeme" localhost:8000/health
+#
+# Postgres persists checkpoints across restarts; data_mode stays mock by default (live /
+# synthetic fall back to mock with a notice since no Azure creds are present locally).
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MOCK_MODE: "true"
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-changeme}
+      POSTGRES_DSN: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # Optional live LLM (leave empty to use the offline stub).
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      LLM_MODEL_CHEAP: ${LLM_MODEL_CHEAP:-}
+      LLM_MODEL_STRONG: ${LLM_MODEL_STRONG:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - secops-data:/app/.data # persist LanceDB long-term memory across restarts
+
+volumes:
+  pgdata:
+  secops-data:

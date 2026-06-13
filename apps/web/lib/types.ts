@@ -55,6 +55,7 @@ export interface RunStatus {
   status: RunStatusValue;
   incident_id: string;
   data_mode: string;
+  data_notices: string[];
   visited: string[];
   findings: Finding[];
   cve_matches: CVEMatch[];

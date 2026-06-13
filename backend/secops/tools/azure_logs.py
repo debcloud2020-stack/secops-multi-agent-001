@@ -37,28 +37,58 @@ DETECTIONS: dict[str, str] = {
 }
 
 
+# Synthetic incidents are pushed to a custom Log Analytics table via the Logs Ingestion
+# API (Phase 5b-2); 'synthetic' mode queries that table with the same KQL surface.
+SYNTHETIC_TABLE = "SecOpsSynthetic_CL"
+
+
 def detection_names() -> list[str]:
     return list(DETECTIONS)
 
 
-def run_detection(name: str) -> list[dict]:
-    """Run a named detection and return rows. Unknown names raise ``KeyError``."""
+def run_detection(
+    name: str, data_mode: str = "mock", notices: list[str] | None = None
+) -> list[dict]:
+    """Run a named detection per ``data_mode`` (mock/live/synthetic).
+
+    Unknown names raise ``KeyError``. Live/synthetic fall back to the mock fixture on any
+    failure (e.g. no Azure creds), appending a note to ``notices`` so the run surfaces it.
+    """
     if name not in DETECTIONS:
         raise KeyError(f"unknown detection '{name}'; choose from {detection_names()}")
 
-    settings = get_settings()
-    if settings.mock_mode:
+    if data_mode == "mock":
         return _mock(name)
 
+    settings = get_settings()
     try:
+        if data_mode == "synthetic":
+            return _synthetic(name, settings)
         return _live(name, DETECTIONS[name], settings)
     except Exception as exc:  # noqa: BLE001 — never die on stage; fall back to mock.
-        log.warning("azure_logs live query failed for %s (%s); falling back to mock", name, exc)
+        log.warning("azure_logs %s query failed for %s (%s); using mock", data_mode, name, exc)
+        _note(notices, data_mode, exc)
         return _mock(name)
+
+
+def _note(notices: list[str] | None, data_mode: str, exc: Exception) -> None:
+    if notices is not None:
+        notices.append(
+            f"log_monitor: '{data_mode}' source unavailable "
+            f"({type(exc).__name__}); used mock fixtures"
+        )
 
 
 def _mock(name: str) -> list[dict]:
     return load_fixture("azure_logs", f"{name}.json")  # type: ignore[return-value]
+
+
+def _synthetic(name: str, settings) -> list[dict]:
+    """Query the synthetic custom table (Logs Ingestion API target) with the same client."""
+    if not settings.azure_workspace_id:
+        raise RuntimeError("AZURE_WORKSPACE_ID not set (synthetic table query)")
+    kql = f"{SYNTHETIC_TABLE} | where Detection_s == '{name}' | project-away TimeGenerated"
+    return _live(name, kql, settings)
 
 
 def _live(name: str, kql: str, settings) -> list[dict]:

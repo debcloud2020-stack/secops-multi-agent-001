@@ -1,12 +1,15 @@
 """Assemble the LangGraph StateGraph (Phase 2 flow).
 
 START -> memory_recall -> guardrail -> supervisor ⇄ [five agents] -> (FINISH)
-      -> memory_write -> END.   Compiled with an in-memory checkpointer (MemorySaver).
+      -> memory_write -> END.   Checkpointer is config-driven (Phase 5b-1): a Postgres
+saver when ``POSTGRES_DSN`` is set (resumable runs survive restarts), else the in-memory
+MemorySaver. Both use a serializer that registers our pydantic state types.
 """
 
 from __future__ import annotations
 
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 
 from secops.agents import (
@@ -21,6 +24,7 @@ from secops.agents import (
     threat_intel,
     vuln_scanner,
 )
+from secops.config import get_settings
 from secops.state import AGENT_ORDER, SecOpsState
 
 _AGENTS = {
@@ -30,6 +34,38 @@ _AGENTS = {
     "policy_checker": policy_checker,
     "incident_response": incident_response,
 }
+
+
+def _serde() -> JsonPlusSerializer:
+    """Serializer that registers our pydantic state types (clears the msgpack warning)."""
+    return JsonPlusSerializer(
+        allowed_msgpack_modules=[
+            ("secops.state", "Incident"),
+            ("secops.state", "Finding"),
+            ("secops.state", "CVEMatch"),
+        ]
+    )
+
+
+def _checkpointer():
+    """Postgres saver when POSTGRES_DSN is set (persistent), else in-memory MemorySaver."""
+    dsn = get_settings().postgres_dsn
+    if not dsn:
+        return MemorySaver(serde=_serde())
+
+    from langgraph.checkpoint.postgres import PostgresSaver
+    from psycopg.rows import dict_row
+    from psycopg_pool import ConnectionPool
+
+    pool = ConnectionPool(
+        conninfo=dsn,
+        max_size=10,
+        open=True,
+        kwargs={"autocommit": True, "prepare_threshold": 0, "row_factory": dict_row},
+    )
+    saver = PostgresSaver(pool, serde=_serde())
+    saver.setup()  # idempotent: create checkpoint tables if missing
+    return saver
 
 
 def build_graph():
@@ -60,4 +96,4 @@ def build_graph():
     # Persist the run, then end.
     builder.add_edge("memory_write", END)
 
-    return builder.compile(checkpointer=MemorySaver())
+    return builder.compile(checkpointer=_checkpointer())

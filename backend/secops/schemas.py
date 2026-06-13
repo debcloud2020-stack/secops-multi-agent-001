@@ -6,14 +6,14 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from secops.state import CVEMatch, Finding
+from secops.state import CVEMatch, DataMode, Finding
 
 RunStatusValue = Literal["queued", "running", "awaiting_approval", "completed", "rejected", "error"]
 
 
 class RunRequest(BaseModel):
     incident_id: str
-    data_mode: Literal["mock", "live"] = "mock"
+    data_mode: DataMode = "mock"
 
 
 class ApproveRequest(BaseModel):
@@ -38,6 +38,7 @@ class RunStatus(BaseModel):
     status: RunStatusValue
     incident_id: str
     data_mode: str = "mock"
+    data_notices: list[str] = Field(default_factory=list)
     visited: list[str] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
     cve_matches: list[CVEMatch] = Field(default_factory=list)

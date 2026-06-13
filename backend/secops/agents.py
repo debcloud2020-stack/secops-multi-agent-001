@@ -90,7 +90,8 @@ def route(state: SecOpsState) -> str:
 # --- Agent nodes (real, mock-defaulted tools through the guardrail) -------------------
 
 def log_monitor(state: SecOpsState) -> dict:
-    rows = azure_logs.run_detection("failed_signins_burst")
+    notices: list[str] = []
+    rows = azure_logs.run_detection("failed_signins_burst", state.data_mode, notices)
     safe, flags = guardrail.scan_obj(rows)  # reason over `safe`, never raw rows
     note = " Guardrail flagged injected content in a log row." if flags else ""
     finding = Finding(
@@ -106,12 +107,14 @@ def log_monitor(state: SecOpsState) -> dict:
         "findings": [finding],
         "visited": ["log_monitor"],
         "guardrail_flags": flags,
+        "data_notices": notices,
         "cost": cost_update("log_monitor", safe),
     }
 
 
 def threat_intel(state: SecOpsState) -> dict:
-    enrichment = enrich_cve(_PRIMARY_CVE)
+    notices: list[str] = []
+    enrichment = enrich_cve(_PRIMARY_CVE, state.data_mode, notices)
     match = to_cve_match(enrichment)
     safe_summary, flags = guardrail.scan(enrichment["summary"])
     kb = knowledge_search("remote code execution edge gateway advisory response", k=2)
@@ -131,17 +134,19 @@ def threat_intel(state: SecOpsState) -> dict:
         "visited": ["threat_intel"],
         "cve_matches": [match],
         "guardrail_flags": flags,
+        "data_notices": notices,
         "cost": cost_update("threat_intel", safe_summary, *kb),
     }
 
 
 def vuln_scanner(state: SecOpsState) -> dict:
-    results = scanner.scan("image")
+    notices: list[str] = []
+    results = scanner.scan("image", state.data_mode, notices)
     matches = []
     for r in results:
         cid = r.get("id") or ""
         if cid.startswith("CVE-"):
-            m = to_cve_match(enrich_cve(cid))
+            m = to_cve_match(enrich_cve(cid, state.data_mode, notices))
             if not m.summary:
                 m.summary = f"{r['package']} {r['installed']} → fix {r['fixed']}"
             matches.append(m)
@@ -157,6 +162,7 @@ def vuln_scanner(state: SecOpsState) -> dict:
         "findings": [finding],
         "visited": ["vuln_scanner"],
         "cve_matches": matches,
+        "data_notices": notices,
         "cost": cost_update("vuln_scanner", *[m.summary for m in matches]),
     }
 

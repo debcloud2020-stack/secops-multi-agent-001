@@ -112,10 +112,20 @@ uv run python -m secops.app run --incident "Critical RCE in gateway"   # smoke r
      **DoD:** `cd backend && uv run pytest ../evals -q` runs the golden set, scores every
      evaluator, and asserts thresholds — passing offline (the LLM-judge skips cleanly
      without a key); baseline recorded in `evals/BASELINE.md`; one clean local commit.
-   - **5b. Azure deploy + data wiring** — make the data-mode toggle functional, Postgres
-     checkpointer, Azure deploy (Static Web Apps + Container Apps + ACR + Postgres),
-     managed identity, spend cap, and push + activate the CI eval gate.
-     **DoD:** CI eval gate passes; app deployed with managed identity (no secrets).
+   - **5b-1. Functional data-mode + Postgres + Docker (LOCAL)** — make `data_mode` a
+     real per-run choice (mock/live/synthetic threaded through state → tools, with
+     auto-fallback-to-mock notices), a config-driven Postgres checkpointer
+     (`POSTGRES_DSN`; MemorySaver default) with the msgpack serializer fix, and a
+     Docker/compose local stack. **DoD:** all three data modes complete locally; Postgres
+     checkpointer persists + HITL resumes; backend builds + runs in Docker; verify gate green.
+   - **5b-2. Azure deploy via GitHub Actions (deploy-as-code)** — `infra/` Bicep (RG, Log
+     Analytics + Sentinel, ACR, Postgres Flexible, Container Apps w/ system-assigned managed
+     identity → Log Analytics Reader, Static Web Apps, DCE/DCR custom table) + deploy/teardown
+     scripts; GitHub Actions deploy workflows (OIDC, no committed secrets); synthetic ingestion
+     + AzureActivity live data; spend cap + teardown runbook; judge baseline. **Authored as
+     code and pushed to GitHub; Azure provisioning/deploy is run manually by the owner.**
+     **DoD:** deploy workflows + infra committed; manual deploy yields a working SWA + ACA
+     app with managed identity (no secrets); eval CI green.
 
 ## Installed skills & when to use each
 Skill packs `obra/superpowers` and `mattpocock/skills` are installed under

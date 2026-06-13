@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     azure_workspace_id: str | None = None
     nvd_api_key: str | None = None
 
+    # --- Phase 5b-1: persistence ---
+    # When set, the graph uses a Postgres checkpointer (resumable runs survive restarts);
+    # unset (default) falls back to the in-memory MemorySaver.
+    postgres_dsn: str | None = None
+
     # --- Phase 3: API server ---
     # Demo password gate for every endpoint (Authorization: Bearer <demo_password>).
     # If unset, the gate fails closed (every request is rejected).

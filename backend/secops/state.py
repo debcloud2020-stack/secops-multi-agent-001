@@ -38,6 +38,9 @@ RouteTarget = Literal[
     "FINISH",
 ]
 
+# Per-run data source selector (Phase 5b-1), shared by state + API schemas.
+DataMode = Literal["mock", "live", "synthetic"]
+
 # Deterministic fallback order — guarantees all five agents are visited in Phase 1.
 AGENT_ORDER: list[AgentName] = [
     "log_monitor",
@@ -91,6 +94,12 @@ class SecOpsState(BaseModel):
     findings: Annotated[list[Finding], operator.add] = Field(default_factory=list)
     # First-class CVE table (PLAN.md §5/§9/§10), separate from per-finding context.
     cve_matches: Annotated[list[CVEMatch], operator.add] = Field(default_factory=list)
+
+    # Per-run data source (mock fixtures / live Azure / synthetic custom table). Threaded
+    # from the API into the tools; persisted in state so history/replay shows the mode.
+    data_mode: DataMode = "mock"
+    # Notices surfaced when a live/synthetic source was unavailable and the run fell back to mock.
+    data_notices: Annotated[list[str], operator.add] = Field(default_factory=list)
 
     # Routing / control
     next_agent: RouteTarget | None = None

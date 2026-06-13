@@ -11,7 +11,6 @@ import json
 import logging
 import subprocess
 
-from secops.config import get_settings
 from secops.tools import load_fixture
 
 log = logging.getLogger(__name__)
@@ -52,16 +51,26 @@ def _normalize_pip_audit(doc: dict) -> list[Normalized]:
     return out
 
 
-def scan(target: str = "image") -> list[Normalized]:
-    """Scan a target. ``target`` selects the scanner: 'image'/'fs' → trivy, 'python' → pip-audit."""
+def scan(
+    target: str = "image", data_mode: str = "mock", notices: list[str] | None = None
+) -> list[Normalized]:
+    """Scan a target per ``data_mode``. 'image'/'fs' → trivy, 'python' → pip-audit.
+
+    ``mock`` reads fixtures; ``live``/``synthetic`` shell out to the real scanner and fall
+    back to the mock fixture on failure / missing CLI, appending a note to ``notices``.
+    """
     tool = "pip_audit" if target == "python" else "trivy"
-    settings = get_settings()
-    if settings.mock_mode:
+    if data_mode == "mock":
         return _mock(tool)
     try:
         return _live(tool, target)
     except Exception as exc:  # noqa: BLE001 — fall back to mock on failure / missing CLI.
-        log.warning("scanner live run failed for %s (%s); falling back to mock", tool, exc)
+        log.warning("scanner %s run failed for %s (%s); falling back to mock", data_mode, tool, exc)
+        if notices is not None:
+            notices.append(
+                f"vuln_scanner: '{data_mode}' scan unavailable "
+                f"({type(exc).__name__}); used mock fixtures"
+            )
         return _mock(tool)
 
 
