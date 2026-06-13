@@ -11,6 +11,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from langchain_core.messages import AIMessage
+from langgraph.types import interrupt
 
 from secops import guardrail
 from secops.config import get_settings
@@ -23,6 +24,15 @@ from secops.tools import azure_logs, scanner
 from secops.tools.threat_intel import enrich_cve, to_cve_match
 
 _PRIMARY_CVE = "CVE-2026-00000"
+
+# The response steps that require human sign-off before execution (HITL).
+_PROPOSED_STEPS = [
+    "Isolate the affected gateway host from the network.",
+    "Rotate credentials and revoke active sessions for the host.",
+    "Apply the vendor patch for the identified RCE (KEV-listed).",
+    "Hunt for lateral movement using the threat-intel indicators.",
+    "File policy-exception remediation for the SLA/segmentation breaches.",
+]
 
 
 # --- Feature-layer nodes (run outside the supervisor loop) ---------------------------
@@ -168,7 +178,41 @@ def policy_checker(state: SecOpsState) -> dict:
 
 
 def incident_response(state: SecOpsState) -> dict:
-    """Synthesize a response plan using the STRONG model tier + recalled memory."""
+    """Synthesize a response plan (STRONG tier + memory), pausing for HITL approval.
+
+    When ``incident.requires_approval`` is set, ``interrupt`` pauses the run as the first
+    action (nothing expensive runs before it, so resume re-execution repeats no work).
+    A reject finishes the run without executing the proposed steps.
+    """
+    approval: dict = {"decision": "approve", "edited_plan": None}
+    if state.incident.requires_approval:
+        approval = interrupt(
+            {
+                "action": "approve_response_plan",
+                "incident": state.incident.title,
+                "proposed_steps": [f"[APPROVAL REQUIRED] {s}" for s in _PROPOSED_STEPS],
+            }
+        )
+
+    if isinstance(approval, dict) and approval.get("decision") == "reject":
+        plan = (
+            f"Response plan for '{state.incident.title}': [REJECTED] — the proposed "
+            "steps were not executed (rejected by a human reviewer)."
+        )
+        finding = Finding(
+            agent="incident_response",
+            title="Response plan rejected",
+            detail=plan,
+            severity="info",
+        )
+        return {
+            "findings": [finding],
+            "visited": ["incident_response"],
+            "response_plan": plan,
+            "approval": approval,
+            "cost": cost_update("incident_response", plan),
+        }
+
     summary = "; ".join(f"{f.agent}: {f.title}" for f in state.findings)
     prior = (
         f" Similar past incident: {state.similar_past[0]['title']}."
@@ -179,15 +223,12 @@ def incident_response(state: SecOpsState) -> dict:
         f"response plan.\nFindings: {summary}{prior}"
     )
     synthesis = get_llm_strong().invoke(prompt)
-    plan = (
+    edited = approval.get("edited_plan") if isinstance(approval, dict) else None
+    plan = edited or (
         f"Response plan for '{state.incident.title}':\n"
-        "1. Isolate the affected gateway host from the network.\n"
-        "2. Rotate credentials and revoke active sessions for the host.\n"
-        "3. Apply the vendor patch for the identified RCE (KEV-listed).\n"
-        "4. Hunt for lateral movement using the threat-intel indicators.\n"
-        "5. File policy-exception remediation for the SLA/segmentation breaches.\n"
-        f"{('[memory] ' + state.similar_past[0]['title']) if state.similar_past else ''}\n"
-        f"[synthesis] {synthesis.content}"
+        + "".join(f"{i}. {s}\n" for i, s in enumerate(_PROPOSED_STEPS, 1))
+        + f"{('[memory] ' + state.similar_past[0]['title']) if state.similar_past else ''}\n"
+        + f"[synthesis] {synthesis.content}"
     )
     finding = Finding(
         agent="incident_response",
@@ -199,5 +240,6 @@ def incident_response(state: SecOpsState) -> dict:
         "findings": [finding],
         "visited": ["incident_response"],
         "response_plan": plan,
+        "approval": approval,
         "cost": cost_update("incident_response", prompt, str(synthesis.content)),
     }

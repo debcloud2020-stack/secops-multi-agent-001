@@ -1,0 +1,34 @@
+{
+  "frameworks": [
+    {
+      "name": "NIST CSF 2.0",
+      "coverage_pct": 72,
+      "controls": [
+        {"id": "PR.PS", "name": "Platform security / timely patching", "status": "gap"},
+        {"id": "PR.AA", "name": "Identity & access control (least privilege, MFA)", "status": "covered"},
+        {"id": "DE.CM", "name": "Continuous monitoring", "status": "covered"},
+        {"id": "RS.MA", "name": "Incident response execution", "status": "partial"}
+      ]
+    },
+    {
+      "name": "ISO/IEC 27001",
+      "coverage_pct": 68,
+      "controls": [
+        {"id": "A.8.8", "name": "Management of technical vulnerabilities (patch SLA)", "status": "gap"},
+        {"id": "A.8.2", "name": "Privileged access rights", "status": "partial"},
+        {"id": "A.8.20", "name": "Network security / segmentation", "status": "gap"},
+        {"id": "A.5.24", "name": "Incident management planning", "status": "covered"}
+      ]
+    },
+    {
+      "name": "SOC 2",
+      "coverage_pct": 80,
+      "controls": [
+        {"id": "CC6.1", "name": "Logical access controls", "status": "covered"},
+        {"id": "CC6.6", "name": "Boundary protection / segmentation", "status": "partial"},
+        {"id": "CC7.2", "name": "Anomaly monitoring", "status": "covered"},
+        {"id": "CC8.1", "name": "Change & patch management", "status": "gap"}
+      ]
+    }
+  ]
+}

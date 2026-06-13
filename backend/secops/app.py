@@ -98,6 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     run_p = sub.add_parser("run", help="Run the supervisor graph over the mock incident")
     run_p.add_argument("--incident", default=None, help="Incident title")
     sub.add_parser("index", help="(Re)build the RAG knowledge index in LanceDB")
+    sub.add_parser("serve", help="Start the FastAPI server (uvicorn)")
     args = parser.parse_args(argv)
 
     if args.command == "run":
@@ -108,6 +109,14 @@ def main(argv: list[str] | None = None) -> int:
 
         build_index()
         print("RAG knowledge index built.")
+        return 0
+    if args.command == "serve":
+        import uvicorn
+
+        from secops.config import get_settings
+
+        s = get_settings()
+        uvicorn.run("secops.server:app", host=s.api_host, port=s.api_port)
         return 0
     return 1
 

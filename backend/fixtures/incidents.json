@@ -1,0 +1,26 @@
+[
+  {
+    "id": "INC-1001",
+    "title": "Critical RCE in gateway",
+    "description": "Suspected unauthenticated remote code execution on an internet-facing edge gateway host, with anomalous authentication activity.",
+    "severity": "critical",
+    "source": "mock",
+    "requires_approval": true
+  },
+  {
+    "id": "INC-1002",
+    "title": "Impossible-travel sign-in for finance user",
+    "description": "A finance user signed in from two geographically impossible locations within 40 minutes, suggesting credential theft.",
+    "severity": "high",
+    "source": "mock",
+    "requires_approval": false
+  },
+  {
+    "id": "INC-1003",
+    "title": "Anomalous privileged role assignment",
+    "description": "A service account granted Global Administrator immediately after a failed-signin burst.",
+    "severity": "high",
+    "source": "mock",
+    "requires_approval": false
+  }
+]

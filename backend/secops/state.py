@@ -78,6 +78,9 @@ class Incident(BaseModel):
     description: str = ""
     severity: Literal["info", "low", "medium", "high", "critical"] = "high"
     source: str = "mock"
+    # When true, incident_response pauses for human approval (HITL). Default false so the
+    # CLI and tests run straight through; curated API incidents opt in explicitly.
+    requires_approval: bool = False
 
 
 class SecOpsState(BaseModel):
@@ -99,3 +102,6 @@ class SecOpsState(BaseModel):
     similar_past: list[dict] = Field(default_factory=list)
     guardrail_flags: Annotated[list[str], operator.add] = Field(default_factory=list)
     cost: Annotated[dict, merge_cost] = Field(default_factory=dict)
+
+    # HITL (Phase 3): the approval decision once a paused run is resumed.
+    approval: dict | None = None

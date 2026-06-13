@@ -29,3 +29,23 @@ def embed_available():
     except Exception as exc:  # noqa: BLE001
         pytest.skip(f"HF embedding model unavailable: {exc}")
     return True
+
+
+@pytest.fixture
+def demo_password(monkeypatch):
+    """Set the API demo password and reset the cached Settings so it's picked up."""
+    pw = "test-pw-123"
+    monkeypatch.setenv("DEMO_PASSWORD", pw)
+    cfg._settings = None
+    yield pw
+    cfg._settings = None
+
+
+@pytest.fixture
+def api_client(demo_password):
+    """A TestClient plus the auth header dict."""
+    from fastapi.testclient import TestClient
+
+    from secops.server import app
+
+    return TestClient(app), {"Authorization": f"Bearer {demo_password}"}

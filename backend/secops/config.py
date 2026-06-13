@@ -54,6 +54,13 @@ class Settings(BaseSettings):
     azure_workspace_id: str | None = None
     nvd_api_key: str | None = None
 
+    # --- Phase 3: API server ---
+    # Demo password gate for every endpoint (Authorization: Bearer <demo_password>).
+    # If unset, the gate fails closed (every request is rejected).
+    demo_password: str | None = None
+    api_host: str = "127.0.0.1"
+    api_port: int = 8000
+
 
 _settings: Settings | None = None
 

@@ -34,6 +34,37 @@ Copy `.env.example` to `.env`, set `MOCK_MODE=false`, `OPENROUTER_API_KEY`, and 
 the tools also try their live paths (Azure Monitor / NVD-KEV-EPSS / trivy+pip-audit) and
 fall back to the mock fixtures on any failure. Embeddings are always the local HF model.
 
+## API server (Phase 3)
+
+Start the local HTTP API (every endpoint requires the demo password):
+
+```bash
+export DEMO_PASSWORD=changeme
+uv run uvicorn secops.server:app --port 8000      # or: uv run python -m secops.app serve
+```
+
+Auth: send `Authorization: Bearer $DEMO_PASSWORD` on every request (401 otherwise).
+Endpoints (PLAN.md §10): `GET /health`, `GET /incidents`, `POST /runs`, `GET /runs/{id}`,
+`GET /runs`, `POST /runs/{id}/approve`, `GET /threats`, `GET /compliance`.
+
+Run → poll → approve flow:
+
+```bash
+H='Authorization: Bearer changeme'
+curl -s -H "$H" localhost:8000/incidents                         # curated incident list
+RID=$(curl -s -H "$H" -X POST localhost:8000/runs \
+       -d '{"incident_id":"INC-1001","data_mode":"mock"}' | jq -r .run_id)
+curl -s -H "$H" localhost:8000/runs/$RID                         # poll: status grows
+# INC-1001 requires approval → status becomes "awaiting_approval":
+curl -s -H "$H" -X POST localhost:8000/runs/$RID/approve \
+     -d '{"decision":"approve"}'                                 # or {"decision":"reject"}
+```
+
+Curated incidents: `INC-1001` requires approval (HITL); `INC-1002`/`INC-1003` run
+straight through to a plan. Runs execute in a background thread pool; `GET /runs/{id}`
+reads the LangGraph checkpointer. Single-process only (in-memory checkpointer) — see
+`server.py`.
+
 ## Verify
 
 ```bash
