@@ -1,0 +1,7 @@
+{
+  "id": "INC-0001",
+  "title": "Critical RCE in gateway",
+  "description": "Mock incident: suspected unauthenticated remote code execution on an edge gateway host, with anomalous authentication activity.",
+  "severity": "critical",
+  "source": "mock"
+}
