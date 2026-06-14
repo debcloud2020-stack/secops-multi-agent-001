@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SEVERITY_CLASS } from "@/lib/format";
+import { summarizeFinding } from "@/lib/plan";
 import { AGENT_LABELS, type Finding, type Severity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +49,9 @@ export function FindingsFeed({ findings }: { findings: Finding[] }) {
                   </div>
                   <h4 className="mt-1.5 text-sm font-medium">{f.title}</h4>
                   {f.detail && (
-                    <p className="mt-1 text-sm text-muted-foreground">{f.detail}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {summarizeFinding(f.agent, f.detail)}
+                    </p>
                   )}
                 </li>
               ))}
