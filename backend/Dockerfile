@@ -7,14 +7,28 @@ FROM python:3.12-slim
 # uv from the official distroless image.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Trivy — the vuln_scanner agent shells out to the `trivy` binary; without it the cloud
+# run hits FileNotFoundError. ca-certificates/curl are needed to fetch the install script.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+       | sh -s -- -b /usr/local/bin \
+    && apt-get purge -y curl \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
+    UV_NO_CACHE=1 \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH=/app \
     HF_HOME=/app/.cache/huggingface
 
 # 1) Dependencies only (cached layer — re-used unless the lockfile changes).
+# torch is pinned to the CPU wheel index in pyproject.toml/uv.lock, so this pulls the
+# lean CPU build (not the ~6GB CUDA one) — bge-small embeddings run on CPU. UV_NO_CACHE
+# (set above, the uv equivalent of pip --no-cache-dir) keeps the layer slim.
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 

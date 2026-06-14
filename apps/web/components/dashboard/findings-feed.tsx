@@ -26,30 +26,33 @@ export function FindingsFeed({ findings }: { findings: Finding[] }) {
         {findings.length === 0 ? (
           <p className="text-sm text-muted-foreground">No findings yet.</p>
         ) : (
-          <ScrollArea className="h-[320px] pr-3">
-            <ul className="space-y-2.5">
+          <ScrollArea className="h-[360px] pr-3">
+            <ul className="space-y-4">
               {findings.map((f, i) => (
                 <li
                   key={`${f.agent}-${i}`}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.06]"
+                  className="rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.06]"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <span className="flex items-center gap-2 text-sm font-semibold tracking-wide text-foreground/90">
                       <span
                         className={cn(
-                          "size-2 shrink-0 animate-pulse rounded-full shadow-[0_0_8px_currentColor]",
+                          "size-2.5 shrink-0 animate-pulse rounded-full shadow-[0_0_8px_currentColor]",
                           DOT_CLASS[f.severity],
                         )}
                       />
                       {AGENT_LABELS[f.agent] ?? f.agent}
                     </span>
-                    <Badge variant="outline" className={cn("text-xs", SEVERITY_CLASS[f.severity])}>
+                    <Badge
+                      variant="outline"
+                      className={cn("text-xs uppercase tracking-wide", SEVERITY_CLASS[f.severity])}
+                    >
                       {f.severity}
                     </Badge>
                   </div>
-                  <h4 className="mt-1.5 text-sm font-medium">{f.title}</h4>
+                  <h4 className="mt-2.5 text-base font-medium leading-snug">{f.title}</h4>
                   {f.detail && (
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                       {summarizeFinding(f.agent, f.detail)}
                     </p>
                   )}

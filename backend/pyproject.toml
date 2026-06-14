@@ -25,7 +25,20 @@ dependencies = [
     "psycopg[binary]>=3.3.4",
     "psycopg-pool>=3.3.1",
     "azure-monitor-ingestion>=1.1.0",
+    # Pulled in transitively by sentence-transformers; declared here only so the CPU-wheel
+    # source below applies. bge-small embeddings run on CPU — avoids the ~6GB CUDA build.
+    "torch>=2.2",
 ]
+
+# Install torch from PyTorch's CPU wheel index (Linux/Windows) instead of the default
+# PyPI build, which bundles CUDA. macOS torch is CPU-only on PyPI, so leave it untouched.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [dependency-groups]
 dev = [

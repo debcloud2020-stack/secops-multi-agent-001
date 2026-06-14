@@ -98,15 +98,21 @@ def _live(cve_id: str, settings) -> dict:
     with httpx.Client(timeout=20) as client:
         resp = client.get(NVD_URL, params={"cveId": cve_id}, headers=headers)
         nvd = resp.raise_for_status().json()
-        vuln = nvd["vulnerabilities"][0]["cve"]
-        metrics = vuln.get("metrics", {})
-        cvss_list = metrics.get("cvssMetricV31") or metrics.get("cvssMetricV30") or []
-        cvss = float(cvss_list[0]["cvssData"]["baseScore"]) if cvss_list else 0.0
-        descriptions = vuln.get("descriptions", [])
-        summary = next((d["value"] for d in descriptions if d.get("lang") == "en"), "")
+        # An empty/rate-limited NVD response yields no vulnerabilities — degrade cleanly
+        # rather than IndexError on [0]; KEV/EPSS below can still enrich the CVE.
+        vulns = nvd.get("vulnerabilities") or []
+        if vulns:
+            vuln = vulns[0]["cve"]
+            metrics = vuln.get("metrics", {})
+            cvss_list = metrics.get("cvssMetricV31") or metrics.get("cvssMetricV30") or []
+            cvss = float(cvss_list[0]["cvssData"]["baseScore"]) if cvss_list else 0.0
+            descriptions = vuln.get("descriptions", [])
+            summary = next((d["value"] for d in descriptions if d.get("lang") == "en"), "")
+        else:
+            cvss, summary = 0.0, "no enrichment available"
 
         kev = client.get(KEV_URL).raise_for_status().json()
-        kev_entry = next((v for v in kev["vulnerabilities"] if v["cveID"] == cve_id), None)
+        kev_entry = next((v for v in kev.get("vulnerabilities", []) if v["cveID"] == cve_id), None)
         in_kev = kev_entry is not None
         known_ransomware = bool(
             kev_entry and str(kev_entry.get("knownRansomwareCampaignUse", "")).lower() == "known"
