@@ -18,10 +18,10 @@ table). Any time a real source is unavailable the run **falls back to mock with 
 ## 2. `backend/.env` (create it — gitignored)
 ```dotenv
 MOCK_MODE=false
-AZURE_WORKSPACE_ID=***REMOVED***
-DCE_ENDPOINT=***REMOVED***
-DCR_IMMUTABLE_ID=***REMOVED***
-DCR_STREAM_NAME=Custom-SecOpsSynthetic_CL
+AZURE_WORKSPACE_ID=
+DCE_ENDPOINT=
+DCR_IMMUTABLE_ID=d
+DCR_STREAM_NAME=
 OPENROUTER_API_KEY=sk-or-...
 LLM_MODEL_CHEAP=<cheap model id>
 LLM_MODEL_STRONG=<strong model id>
