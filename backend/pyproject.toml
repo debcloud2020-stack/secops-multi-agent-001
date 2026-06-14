@@ -14,7 +14,6 @@ dependencies = [
     "llama-index-embeddings-huggingface>=0.7.0",
     "lancedb>=0.33.0",
     "sentence-transformers>=5.5.1",
-    "torch>=2.2",
     "azure-monitor-query>=2.0.0",
     "azure-identity>=1.25.3",
     "httpx>=0.28.1",
@@ -35,18 +34,6 @@ dev = [
     "mypy>=1.10",
     "langsmith>=0.8.15",
 ]
-
-# Pull PyTorch from the CPU-only wheel index on the container's platform (linux) so the
-# image doesn't bundle multi-GB CUDA libraries. macOS stays on the default (already CPU).
-[tool.uv.sources]
-torch = [
-    { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
 
 [build-system]
 requires = ["hatchling"]
