@@ -83,8 +83,19 @@ def _live(tool: str, target: str) -> list[Normalized]:
     if tool == "trivy":
         kind = "image" if target == "image" else "fs"
         arg = "." if kind == "fs" else target
+        cmd = ["trivy", kind, "--quiet", "--format", "json"]
+        if kind == "fs":
+            # Scan the dependency manifests (uv.lock/requirements) for vulnerabilities only —
+            # not secrets, and skip the installed venv / model cache / vector store. Without
+            # this, `trivy fs .` walks tens of thousands of files in /app and times out.
+            cmd += [
+                "--scanners", "vuln",
+                "--skip-dirs", "./.venv",
+                "--skip-dirs", "./.cache",
+                "--skip-dirs", "./.data",
+            ]
         proc = subprocess.run(
-            ["trivy", kind, "--quiet", "--format", "json", arg],
+            [*cmd, arg],
             capture_output=True, text=True, timeout=300, check=True,
         )
         return _normalize_trivy(json.loads(proc.stdout))
