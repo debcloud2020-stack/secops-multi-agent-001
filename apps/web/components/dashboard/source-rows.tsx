@@ -91,14 +91,17 @@ export function SourceRowsPanel({ data, mode }: { data: SourceRows; mode?: DataM
   }
 
   return (
-    <Card className={cn("border-l-2", mode && MODE_ACCENT[mode].border)}>
+    <Card className={cn("border-l-4", mode && MODE_ACCENT[mode].border)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">
-          Source rows
+          Evidence reviewed
           <span className="ml-2 text-sm font-normal text-muted-foreground">
             {data.source} · {data.count} {data.count === 1 ? "row" : "rows"}
           </span>
         </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Telemetry the Log Monitor examined for this incident
+        </p>
       </CardHeader>
       <CardContent>{body}</CardContent>
     </Card>

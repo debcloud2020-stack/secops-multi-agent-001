@@ -24,9 +24,10 @@ export function ApprovalPanel({
   }
 
   return (
-    <Card className="border-amber-500/40 bg-amber-500/5">
+    <Card className="border-amber-500/40 bg-amber-500/10 ring-1 ring-amber-500/20">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base text-amber-700 dark:text-amber-300">
+        <CardTitle className="flex items-center gap-2 text-base text-amber-200">
+          <span className="size-2 animate-pulse rounded-full bg-amber-400 text-amber-400 shadow-[0_0_8px_currentColor]" />
           Approval required
         </CardTitle>
       </CardHeader>

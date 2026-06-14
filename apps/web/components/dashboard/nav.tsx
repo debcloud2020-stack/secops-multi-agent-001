@@ -18,12 +18,14 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-1 border-b p-3 md:h-dvh md:w-60 md:border-r md:border-b-0">
-      <Link href="/" className="mb-4 flex items-center gap-2 px-2 py-1.5">
-        <span className="inline-flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+    <aside className="flex w-full shrink-0 flex-col gap-1 border-b border-white/10 bg-white/[0.03] p-3 backdrop-blur-xl md:h-dvh md:w-60 md:border-r md:border-b-0">
+      <Link href="/" className="mb-4 flex items-center gap-2.5 px-2 py-1.5">
+        <span className="inline-flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-400 text-[#06121a] shadow-lg shadow-cyan-500/20">
           <ShieldAlert className="size-4" />
         </span>
-        <span className="font-semibold tracking-tight">SecOps</span>
+        <span className="font-heading text-base font-semibold tracking-tight text-foreground">
+          SecOps
+        </span>
       </Link>
       <nav className="flex flex-row gap-1 md:flex-col">
         {LINKS.map((l) => {
@@ -33,10 +35,10 @@ export function DashboardNav() {
               key={l.href}
               href={l.href}
               className={cn(
-                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                 active
-                  ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+                  ? "border border-cyan-500/30 bg-cyan-500/10 text-cyan-200"
+                  : "border border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground",
               )}
             >
               <l.icon className="size-4" />

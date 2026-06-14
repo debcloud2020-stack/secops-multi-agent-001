@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCompliance, getIncidents, getRun, getThreats, listRuns } from "@/lib/api";
 import type { ComplianceOut, CVEMatch, IncidentOut, RunSummary } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface Kpis {
   openIncidents: number;
@@ -54,11 +55,11 @@ export default function OverviewPage() {
   }, []);
 
   const cards = [
-    { label: "Curated incidents", value: kpis?.openIncidents, icon: Activity },
-    { label: "Critical KEV CVEs", value: kpis?.criticalKev, icon: ShieldAlert },
-    { label: "Compliance", value: kpis ? `${kpis.compliancePct}%` : undefined, icon: ListChecks },
-    { label: "Recent runs", value: kpis?.recentRuns, icon: ShieldCheck },
-    { label: "Spend (last run)", value: kpis ? `${kpis.spend} tok` : undefined, icon: Activity },
+    { label: "Curated incidents", value: kpis?.openIncidents, icon: Activity, accent: "text-cyan-400" },
+    { label: "Critical KEV CVEs", value: kpis?.criticalKev, icon: ShieldAlert, accent: "text-red-400" },
+    { label: "Compliance", value: kpis ? `${kpis.compliancePct}%` : undefined, icon: ListChecks, accent: "text-emerald-400" },
+    { label: "Recent runs", value: kpis?.recentRuns, icon: ShieldCheck, accent: "text-violet-400" },
+    { label: "Spend (last run)", value: kpis ? `${kpis.spend} tok` : undefined, icon: Activity, accent: "text-amber-400" },
   ];
 
   return (
@@ -71,14 +72,14 @@ export default function OverviewPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
                   {c.label}
-                  <c.icon className="size-4" />
+                  <c.icon className={cn("size-4", c.accent)} />
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {c.value === undefined ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  <div className="text-2xl font-semibold tabular-nums">{c.value}</div>
+                  <div className="font-heading text-3xl font-semibold tabular-nums">{c.value}</div>
                 )}
               </CardContent>
             </Card>
@@ -95,9 +96,9 @@ export default function OverviewPage() {
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={coverage} margin={{ left: -16 }}>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
-                  <YAxis domain={[0, 100]} tickLine={false} axisLine={false} fontSize={12} />
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} tick={{ fill: "#94a3b8" }} />
+                  <YAxis domain={[0, 100]} tickLine={false} axisLine={false} fontSize={12} tick={{ fill: "#94a3b8" }} />
                   <Bar dataKey="coverage" radius={[4, 4, 0, 0]} fill="var(--color-primary)" />
                 </BarChart>
               </ResponsiveContainer>
