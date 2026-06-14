@@ -61,7 +61,7 @@ export default function LandingPage() {
               Open dashboard <ArrowRight className="size-4" />
             </Link>
             <a
-              href="https://github.com"
+              href="https://github.com/debcloud2020-stack/secops-multi-agent-001"
               target="_blank"
               rel="noreferrer"
               className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
