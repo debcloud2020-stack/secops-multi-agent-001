@@ -57,12 +57,7 @@ jobs:
         run: |
           az config set extension.use_dynamic_install=yes_without_prompt
           az extension add --name containerapp --upgrade --only-show-errors
-          # Let ACA pull the (private) GHCR image. GHCR_PULL_TOKEN is a PAT with read:packages.
-          az containerapp registry set \
-            --name secops-backend --resource-group secops-demo-rg \
-            --server ghcr.io \
-            --username ${{ github.repository_owner }} \
-            --password ${{ secrets.GHCR_PULL_TOKEN }}
+          # The GHCR package is public, so ACA pulls it anonymously — no registry creds/token.
           az containerapp update \
             --name secops-backend --resource-group secops-demo-rg \
             --image ${{ env.IMAGE }}:${{ github.sha }}
