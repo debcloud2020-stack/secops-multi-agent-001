@@ -276,27 +276,31 @@ secops/
     Dockerfile
   packages/shared/            # shared TS/py types (finding, cve, run)
   evals/                      # golden.jsonl, evaluators.py, test_agents.py
-  .github/workflows/eval.yml  # CI eval gate
-  infra/                      # bicep/terraform: SWA, ACA, ACR, Postgres, DCR/DCE
-  docker-compose.yml          # local: backend + postgres
+  .github/workflows/eval.yml  # CI eval gate (offline; the only workflow)
 ```
+> **Deployment is manual via the Azure portal** — frontend to Static Web Apps, backend to
+> Container Apps, both connected to this GitHub repo; ACA builds the backend image from
+> `backend/Dockerfile`. **No IaC in this repo** (no `infra/`, no deploy workflows, no
+> `docker-compose.yml`); the owner manages all Azure setup.
 
-## 12. Deployment architecture (all-Azure)
+## 12. Deployment architecture (manual, via the Azure portal)
+
+Deployment is **manual** and owned outside this repo: the frontend and backend are wired to
+this GitHub repo from the Azure portal — no IaC, no deploy workflows, no `docker-compose.yml`
+here. Azure Container Apps builds the backend image from `backend/Dockerfile`.
 
 ```mermaid
 flowchart LR
-  subgraph SWA["Azure Static Web Apps"]
+  subgraph SWA["Azure Static Web Apps (portal-connected to GitHub)"]
     FE["Next.js static export (landing + dashboard)"]
   end
-  subgraph ACA["Azure Container Apps"]
-    BG["Docker: FastAPI + LangGraph (password gate, min-replicas 1 during demo)"]
+  subgraph ACA["Azure Container Apps (builds from backend/Dockerfile)"]
+    BG["FastAPI + LangGraph (password gate)"]
   end
-  ACR["Azure Container Registry"]
-  PG[("Azure Postgres Flexible Server (or SQLite for demo)")]
+  PG[("Azure Postgres Flexible Server — POSTGRES_DSN checkpointer")]
   AZURE["Personal Azure: Log Analytics / Sentinel (managed identity → Reader)"]
 
   FE -->|"poll + password"| BG
-  ACR --> BG
   BG --> PG
   BG -->|managed identity| AZURE
 ```
@@ -320,7 +324,7 @@ incidents only**, **min-replicas → 0 / delete after the demo**.
 
 | Phase | Deliverable |
 |---|---|
-| 0 | Monorepo scaffold + envs + docker-compose + infra stubs |
+| 0 | Monorepo scaffold + envs |
 | 1 | LangGraph supervisor + 5 agents, Pydantic state, step ceiling, mock mode |
 | 2 | Tools: azure_logs (KQL lib), threat_intel (NVD/KEV/EPSS), scanner |
 | 3 | RAG: LlamaIndex + LanceDB index + agentic retriever |
@@ -333,7 +337,7 @@ incidents only**, **min-replicas → 0 / delete after the demo**.
 | 10 | HITL interrupt + /approve |
 | 11 | Evals (incl. guardrail/memory/cost) + CI gate |
 | 12 | Azure data: diagnostic settings (live) + Logs Ingestion API (synthetic) |
-| 13 | Deploy: SWA + ACA + ACR + Postgres; managed identity; spend cap |
+| 13 | Deploy: MANUAL via Azure portal (SWA + ACA connected to this repo; ACA builds from backend/Dockerfile); managed identity; spend cap — no IaC in repo |
 
 ## 15. Open decisions & risks
 

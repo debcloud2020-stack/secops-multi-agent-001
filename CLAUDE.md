@@ -38,7 +38,7 @@ backend/        Python package `secops` (primary deliverable)
   tests/        smoke test
 apps/web/       Next.js frontend (placeholder until the frontend phase)
 evals/          eval harness (placeholder)
-infra/          Azure IaC / Docker (placeholder)
+backend/Dockerfile   image Azure Container Apps builds from when deploying from GitHub
 docs/plans/     per-phase implementation plans
 .claude/agents/ five project subagents
 .claude/skills/ installed skill packs (symlinks into .agents/skills/)
@@ -112,20 +112,18 @@ uv run python -m secops.app run --incident "Critical RCE in gateway"   # smoke r
      **DoD:** `cd backend && uv run pytest ../evals -q` runs the golden set, scores every
      evaluator, and asserts thresholds — passing offline (the LLM-judge skips cleanly
      without a key); baseline recorded in `evals/BASELINE.md`; one clean local commit.
-   - **5b-1. Functional data-mode + Postgres + Docker (LOCAL)** — make `data_mode` a
-     real per-run choice (mock/live/synthetic threaded through state → tools, with
-     auto-fallback-to-mock notices), a config-driven Postgres checkpointer
-     (`POSTGRES_DSN`; MemorySaver default) with the msgpack serializer fix, and a
-     Docker/compose local stack. **DoD:** all three data modes complete locally; Postgres
-     checkpointer persists + HITL resumes; backend builds + runs in Docker; verify gate green.
-   - **5b-2. Azure deploy via GitHub Actions (deploy-as-code)** — `infra/` Bicep (RG, Log
-     Analytics + Sentinel, ACR, Postgres Flexible, Container Apps w/ system-assigned managed
-     identity → Log Analytics Reader, Static Web Apps, DCE/DCR custom table) + deploy/teardown
-     scripts; GitHub Actions deploy workflows (OIDC, no committed secrets); synthetic ingestion
-     + AzureActivity live data; spend cap + teardown runbook; judge baseline. **Authored as
-     code and pushed to GitHub; Azure provisioning/deploy is run manually by the owner.**
-     **DoD:** deploy workflows + infra committed; manual deploy yields a working SWA + ACA
-     app with managed identity (no secrets); eval CI green.
+   - **5b-1. Functional data-mode + Postgres checkpointer + backend Dockerfile** — make
+     `data_mode` a real per-run choice (mock/live/synthetic threaded through state → tools,
+     with auto-fallback-to-mock notices), a config-driven Postgres checkpointer
+     (`POSTGRES_DSN`; MemorySaver default) with the msgpack serializer fix, and a backend
+     `Dockerfile`. **DoD:** all three data modes complete locally; Postgres checkpointer
+     persists + HITL resumes; backend image builds; verify gate green.
+   - **5b-2. Deployment — MANUAL via the Azure portal.** Frontend → **Azure Static Web
+     Apps**, backend → **Azure Container Apps**, both connected to this GitHub repo from the
+     portal; ACA builds the backend image from `backend/Dockerfile`. The owner manages all
+     Azure setup (resources, managed identity, `POSTGRES_DSN`, `DEMO_PASSWORD`,
+     `OPENROUTER_API_KEY`, `CORS_ORIGINS`, spend cap). **No IaC, no deploy workflows, and no
+     Azure resources live in this repo.** CI here is only the offline `eval.yml` gate.
 
 ## Installed skills & when to use each
 Skill packs `obra/superpowers` and `mattpocock/skills` are installed under

@@ -1,9 +1,8 @@
 """Postgres checkpointer persistence + HITL resume (Phase 5b-1).
 
-Gated: runs only when ``POSTGRES_DSN`` is set (e.g. against the docker-compose Postgres).
+Gated: runs only when ``POSTGRES_DSN`` is set (e.g. against a local or Azure Postgres).
 Skipped in the normal offline gate.
 
-    docker compose up -d db
     POSTGRES_DSN=postgresql://postgres:postgres@localhost:5432/postgres \
       uv run pytest tests/test_checkpoint_postgres.py -q
 """
