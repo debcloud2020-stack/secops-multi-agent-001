@@ -4,26 +4,48 @@ name: Trigger auto deployment for secops-backend
 on:
   # Automatically trigger it when detected changes in repo
   push:
-    branches: 
+    branches:
       [ main ]
     paths:
     - '**'
     - '.github/workflows/secops-backend-AutoDeployTrigger-b1a22bc0-a3d0-49b9-84fb-eb8852eea9a6.yml'
 
-  # Allow manual trigger 
-  workflow_dispatch:      
+  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions: 
-      id-token: write #This is required for requesting the OIDC JWT Token
-      contents: read #Required when GH token is used to authenticate with private repo
+    permissions:
+      id-token: write   # OIDC JWT for Azure login
+      contents: read    # checkout
+      packages: write   # push image to GHCR
+    env:
+      IMAGE: ghcr.io/debcloud2020-stack/secops-backend
 
     steps:
       - name: Checkout to the branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
+      # --- Build the backend Dockerfile and push it to GitHub Container Registry ---
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image (from backend/Dockerfile)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+
+      # --- Point the Container App at the freshly pushed image ---
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -31,12 +53,16 @@ jobs:
           tenant-id: ${{ secrets.SECOPSBACKEND_AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.SECOPSBACKEND_AZURE_SUBSCRIPTION_ID }}
 
-      - name: Build and push container image to registry
-        uses: azure/container-apps-deploy-action@v2
-        with:
-          appSourcePath: ${{ github.workspace }}/backend
-          dockerfilePath: Dockerfile
-          containerAppName: secops-backend
-          resourceGroup: secops-demo-rg
-
-
+      - name: Deploy image to Container App
+        run: |
+          az config set extension.use_dynamic_install=yes_without_prompt
+          az extension add --name containerapp --upgrade --only-show-errors
+          # Let ACA pull the (private) GHCR image. GHCR_PULL_TOKEN is a PAT with read:packages.
+          az containerapp registry set \
+            --name secops-backend --resource-group secops-demo-rg \
+            --server ghcr.io \
+            --username ${{ github.repository_owner }} \
+            --password ${{ secrets.GHCR_PULL_TOKEN }}
+          az containerapp update \
+            --name secops-backend --resource-group secops-demo-rg \
+            --image ${{ env.IMAGE }}:${{ github.sha }}
