@@ -15,7 +15,8 @@ export function SimilarIncidents({ items }: { items: SimilarIncident[] }) {
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={s.id ?? i} className="rounded-lg border p-3">
+              // memory recall can surface the same incident id more than once → composite key
+              <li key={`${s.id ?? "incident"}-${i}`} className="rounded-lg border p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium">{s.title ?? s.id ?? "Incident"}</span>
                   {typeof s.score === "number" && (
