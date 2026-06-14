@@ -90,6 +90,7 @@ def _live(tool: str, target: str) -> list[Normalized]:
             # this, `trivy fs .` walks tens of thousands of files in /app and times out.
             cmd += [
                 "--scanners", "vuln",
+                "--skip-db-update",  # use the DB baked into the image (no ghcr.io at runtime)
                 "--skip-dirs", "./.venv",
                 "--skip-dirs", "./.cache",
                 "--skip-dirs", "./.data",

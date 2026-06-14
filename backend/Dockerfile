@@ -23,7 +23,14 @@ ENV UV_LINK_MODE=copy \
     UV_NO_CACHE=1 \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH=/app \
-    HF_HOME=/app/.cache/huggingface
+    HF_HOME=/app/.cache/huggingface \
+    TRIVY_CACHE_DIR=/opt/trivy-cache
+
+# Bake the Trivy vulnerability DB into the image (network is only available at build time —
+# the running container can't reach ghcr.io). Lives outside /app so the fs scan never walks
+# it; scanner.py runs with --skip-db-update so vuln_scanner works fully offline. chown to the
+# runtime uid (the 'app' user is created later) since trivy needs to lock the cache dir.
+RUN trivy fs --download-db-only && chown -R 10001:10001 /opt/trivy-cache
 
 # 1) Dependencies only (cached layer — re-used unless the lockfile changes).
 # torch is pinned to the CPU wheel index in pyproject.toml/uv.lock, so this pulls the
