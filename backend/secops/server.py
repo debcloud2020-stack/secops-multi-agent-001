@@ -85,6 +85,9 @@ def _record_error(run_id: str, exc: Exception) -> None:
     log.exception("run %s failed: %s", run_id, exc)
     with _LOCK:
         RUNS[run_id]["error"] = "run failed"
+        # Release the resume lock so a failed resume doesn't 409-lock the run forever;
+        # the run now reports status "error" (checked before interrupts in _status).
+        RUNS[run_id]["resuming"] = False
 
 
 def _start_run(run_id: str, incident: Incident, data_mode: DataMode) -> None:

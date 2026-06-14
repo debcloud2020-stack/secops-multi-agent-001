@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { approveRun, getRun, startRun } from "@/lib/api";
+import { TERMINAL_STATUSES } from "@/lib/types";
 import type { Decision, RunStatus, RunStatusValue } from "@/lib/types";
 
 const POLL_MS = 1500;
@@ -15,7 +16,11 @@ export function useRun() {
   const [error, setError] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
   // A new target (or a bumped nonce on the same id) (re)starts the polling effect.
-  const [target, setTarget] = useState<{ id: string; nonce: number } | null>(null);
+  // `resuming` is set after an approve: poll *through* awaiting_approval/running until a
+  // terminal status, so a failed resume surfaces as "error" instead of stranding the panel.
+  const [target, setTarget] = useState<{ id: string; nonce: number; resuming?: boolean } | null>(
+    null,
+  );
   const nonce = useRef(0);
 
   const handleError = useCallback((e: unknown) => {
@@ -34,7 +39,12 @@ export function useRun() {
         const r = await getRun(target.id);
         if (cancelled) return;
         setRun(r);
-        if (ACTIVE.includes(r.status)) {
+        // After an approve, keep polling until terminal (resume transitions
+        // awaiting_approval → running → completed/error); otherwise pause at awaiting_approval.
+        const keepGoing = target.resuming
+          ? !TERMINAL_STATUSES.includes(r.status)
+          : ACTIVE.includes(r.status);
+        if (keepGoing) {
           timer = setTimeout(poll, POLL_MS);
         } else {
           setPolling(false); // nested in poll(), not the effect body
@@ -71,7 +81,7 @@ export function useRun() {
       try {
         const r = await approveRun(id, decision, editedPlan);
         setRun(r);
-        setTarget({ id, nonce: ++nonce.current }); // re-poll to terminal status
+        setTarget({ id, nonce: ++nonce.current, resuming: true }); // re-poll to terminal status
       } catch (e) {
         handleError(e);
       }
