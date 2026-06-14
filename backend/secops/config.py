@@ -54,6 +54,12 @@ class Settings(BaseSettings):
     azure_workspace_id: str | None = None
     nvd_api_key: str | None = None
 
+    # Synthetic data ingestion (Logs Ingestion API → SecOpsSynthetic_CL custom table).
+    # Used by scripts/seed_synthetic.py and the 'synthetic' data_mode query path.
+    dce_endpoint: str | None = None
+    dcr_immutable_id: str | None = None
+    dcr_stream_name: str = "Custom-SecOpsSynthetic_CL"
+
     # --- Phase 5b-1: persistence ---
     # When set, the graph uses a Postgres checkpointer (resumable runs survive restarts);
     # unset (default) falls back to the in-memory MemorySaver.

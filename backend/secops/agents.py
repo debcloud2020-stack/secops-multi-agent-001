@@ -23,7 +23,10 @@ from secops.state import AGENT_ORDER, Finding, SecOpsState
 from secops.tools import azure_logs, scanner
 from secops.tools.threat_intel import enrich_cve, to_cve_match
 
-_PRIMARY_CVE = "CVE-2026-00000"
+_PRIMARY_CVE = "CVE-2026-00000"  # mock fixture CVE (kept for offline determinism)
+# Real, well-known CVE used in non-mock modes so NVD/KEV/EPSS return real data
+# (Log4Shell — present in NVD + CISA KEV + has an EPSS score).
+_PRIMARY_CVE_LIVE = "CVE-2021-44228"
 
 # The response steps that require human sign-off before execution (HITL).
 _PROPOSED_STEPS = [
@@ -91,7 +94,10 @@ def route(state: SecOpsState) -> str:
 
 def log_monitor(state: SecOpsState) -> dict:
     notices: list[str] = []
-    rows = azure_logs.run_detection("failed_signins_burst", state.data_mode, notices)
+    # Live mode queries AzureActivity (real + populated); mock/synthetic use the sign-in
+    # detection name (synthetic ignores it and queries the seeded custom table).
+    detection = "azure_activity" if state.data_mode == "live" else "failed_signins_burst"
+    rows = azure_logs.run_detection(detection, state.data_mode, notices)
     safe, flags = guardrail.scan_obj(rows)  # reason over `safe`, never raw rows
     note = " Guardrail flagged injected content in a log row." if flags else ""
     finding = Finding(
@@ -114,7 +120,8 @@ def log_monitor(state: SecOpsState) -> dict:
 
 def threat_intel(state: SecOpsState) -> dict:
     notices: list[str] = []
-    enrichment = enrich_cve(_PRIMARY_CVE, state.data_mode, notices)
+    cve = _PRIMARY_CVE if state.data_mode == "mock" else _PRIMARY_CVE_LIVE
+    enrichment = enrich_cve(cve, state.data_mode, notices)
     match = to_cve_match(enrichment)
     safe_summary, flags = guardrail.scan(enrichment["summary"])
     kb = knowledge_search("remote code execution edge gateway advisory response", k=2)
@@ -141,7 +148,9 @@ def threat_intel(state: SecOpsState) -> dict:
 
 def vuln_scanner(state: SecOpsState) -> dict:
     notices: list[str] = []
-    results = scanner.scan("image", state.data_mode, notices)
+    # Non-mock runs a real filesystem scan (trivy fs .); mock uses the image fixture.
+    target = "fs" if state.data_mode != "mock" else "image"
+    results = scanner.scan(target, state.data_mode, notices)
     matches = []
     for r in results:
         cid = r.get("id") or ""

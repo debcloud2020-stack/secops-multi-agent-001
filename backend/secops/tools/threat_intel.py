@@ -44,7 +44,7 @@ def enrich_cve(cve_id: str, data_mode: str = "mock", notices: list[str] | None =
         if notices is not None:
             notices.append(
                 f"threat_intel: '{data_mode}' enrichment unavailable "
-                f"({type(exc).__name__}); used mock fixtures"
+                f"({type(exc).__name__}: {str(exc)[:120]}) — used mock fixtures"
             )
         return _mock(cve_id)
 

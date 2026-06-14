@@ -1,0 +1,23 @@
+[
+  {
+    "OperationNameValue": "Microsoft.Compute/virtualMachines/write",
+    "ActivityStatusValue": "Success",
+    "Caller": "svc-gateway@contoso.com",
+    "CallerIpAddress": "203.0.113.66",
+    "EventCount": 42
+  },
+  {
+    "OperationNameValue": "Microsoft.Authorization/roleAssignments/write",
+    "ActivityStatusValue": "Success",
+    "Caller": "svc-gateway@contoso.com",
+    "CallerIpAddress": "203.0.113.66",
+    "EventCount": 7
+  },
+  {
+    "OperationNameValue": "Microsoft.Network/networkSecurityGroups/securityRules/write",
+    "ActivityStatusValue": "Failure",
+    "Caller": "admin@contoso.com",
+    "CallerIpAddress": "198.51.100.23",
+    "EventCount": 3
+  }
+]

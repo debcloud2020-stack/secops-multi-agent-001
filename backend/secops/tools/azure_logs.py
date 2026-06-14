@@ -34,6 +34,14 @@ DETECTIONS: dict[str, str] = {
         "AuditLogs | where OperationName has 'Add member to role' "
         "| project TimeGenerated, Initiator, Operation=OperationName, Role, Target, Result"
     ),
+    # AzureActivity is real + populated in a fresh workspace (no Entra P1 needed) — the
+    # log_monitor agent uses this in live mode so the dashboard shows real rows.
+    "azure_activity": (
+        "AzureActivity | where TimeGenerated > ago(1d) "
+        "| summarize EventCount=count() by OperationNameValue, ActivityStatusValue, "
+        "Caller, CallerIpAddress "
+        "| order by EventCount desc | take 25"
+    ),
 }
 
 
@@ -75,7 +83,7 @@ def _note(notices: list[str] | None, data_mode: str, exc: Exception) -> None:
     if notices is not None:
         notices.append(
             f"log_monitor: '{data_mode}' source unavailable "
-            f"({type(exc).__name__}); used mock fixtures"
+            f"({type(exc).__name__}: {str(exc)[:120]}) — used mock fixtures"
         )
 
 
@@ -84,12 +92,18 @@ def _mock(name: str) -> list[dict]:
 
 
 def _synthetic(name: str, settings) -> list[dict]:
-    """Query the synthetic custom table (Logs Ingestion API target) with the same client."""
+    """Query recent rows from the synthetic custom table (seeded via the Logs Ingestion API).
+
+    Returns the real seeded incidents projected to the table schema — the agent reasons over
+    them regardless of the requested detection ``name``.
+    """
     if not settings.azure_workspace_id:
         raise RuntimeError("AZURE_WORKSPACE_ID not set (synthetic table query)")
     kql = (
-        f"{SYNTHETIC_TABLE} | where Detection == '{name}' "
-        "| project Row | evaluate bag_unpack(Row)"
+        f"{SYNTHETIC_TABLE} | where TimeGenerated > ago(7d) "
+        "| project TimeGenerated, IncidentId, Title, DetectionName, Severity, "
+        "UserPrincipalName, SourceIp, Description, EventCount "
+        "| order by TimeGenerated desc | take 50"
     )
     return _live(name, kql, settings)
 

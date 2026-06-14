@@ -69,7 +69,7 @@ def scan(
         if notices is not None:
             notices.append(
                 f"vuln_scanner: '{data_mode}' scan unavailable "
-                f"({type(exc).__name__}); used mock fixtures"
+                f"({type(exc).__name__}: {str(exc)[:120]}) — used mock fixtures"
             )
         return _mock(tool)
 
