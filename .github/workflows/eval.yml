@@ -1,9 +1,11 @@
-# Offline eval gate — runs the golden-set suite on every PR + nightly, fully in MOCK_MODE
-# (no cloud, no secrets). Created dormant in Phase 5a; active since the repo was pushed in
-# Phase 5b-2.
+# Offline eval gate — runs the golden-set suite on pushes to main + every PR + nightly,
+# fully in MOCK_MODE (no cloud, no secrets). Created dormant in Phase 5a; active since the
+# repo was pushed in Phase 5b-2.
 name: eval-gate
 
 on:
+  push:
+    branches: [main]
   pull_request:
   schedule:
     - cron: "0 7 * * *" # nightly 07:00 UTC
