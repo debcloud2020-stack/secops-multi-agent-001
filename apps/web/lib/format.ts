@@ -1,4 +1,27 @@
-import type { RunStatusValue, Severity } from "@/lib/types";
+import type { DataMode, RunStatusValue, Severity } from "@/lib/types";
+
+// One professional accent per data mode (slate / emerald / violet) over the neutral base.
+// `badge` tints the mode badge; `border` is a subtle left accent strip on result panels.
+export const MODE_LABEL: Record<DataMode, string> = {
+  mock: "Mock",
+  live: "Live",
+  synthetic: "Synthetic",
+};
+
+export const MODE_ACCENT: Record<DataMode, { badge: string; border: string }> = {
+  mock: {
+    badge: "bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30",
+    border: "border-l-slate-500/50",
+  },
+  live: {
+    badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+    border: "border-l-emerald-500/60",
+  },
+  synthetic: {
+    badge: "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30",
+    border: "border-l-violet-500/60",
+  },
+};
 
 export const SEVERITY_CLASS: Record<Severity, string> = {
   critical: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",

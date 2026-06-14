@@ -5,11 +5,12 @@ import { FindingsFeed } from "@/components/dashboard/findings-feed";
 import { GuardrailFlags } from "@/components/dashboard/guardrail-flags";
 import { PlanView } from "@/components/dashboard/plan-view";
 import { SimilarIncidents } from "@/components/dashboard/similar-incidents";
+import { SourceRowsPanel } from "@/components/dashboard/source-rows";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { RunStatus } from "@/lib/types";
+import type { DataMode, RunStatus } from "@/lib/types";
 
 /** All run panels driven by a RunStatus. Reused by the run page and history replay. */
-export function RunResult({ run }: { run: RunStatus }) {
+export function RunResult({ run, mode }: { run: RunStatus; mode?: DataMode }) {
   const notices = run.data_notices ?? [];
   return (
     <div className="space-y-4">
@@ -24,6 +25,7 @@ export function RunResult({ run }: { run: RunStatus }) {
         </div>
       )}
       <AgentRail visited={run.visited} status={run.status} />
+      {run.source_rows && <SourceRowsPanel data={run.source_rows} mode={mode} />}
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
           <FindingsFeed findings={run.findings} />

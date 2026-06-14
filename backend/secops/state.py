@@ -100,6 +100,8 @@ class SecOpsState(BaseModel):
     data_mode: DataMode = "mock"
     # Notices surfaced when a live/synthetic source was unavailable and the run fell back to mock.
     data_notices: Annotated[list[str], operator.add] = Field(default_factory=list)
+    # Compact summary of the log_monitor source rows (additive; single writer, no reducer).
+    source_rows: dict | None = None
 
     # Routing / control
     next_agent: RouteTarget | None = None

@@ -50,12 +50,24 @@ export interface SimilarIncident {
   score?: number;
 }
 
+export interface SourceRows {
+  kind: "operations" | "incidents" | "signins" | "empty" | string;
+  source: string;
+  count: number;
+  operations?: { name: string; count: number }[];
+  callers?: string[];
+  source_ips?: string[];
+  incidents?: { id: string; title: string; detection: string; severity: string }[];
+  signins?: { user: string; ip: string; result: string; failures: number }[];
+}
+
 export interface RunStatus {
   run_id: string;
   status: RunStatusValue;
   incident_id: string;
   data_mode: string;
   data_notices: string[];
+  source_rows?: SourceRows | null;
   visited: string[];
   findings: Finding[];
   cve_matches: CVEMatch[];

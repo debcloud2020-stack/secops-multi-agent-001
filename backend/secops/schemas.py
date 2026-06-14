@@ -39,6 +39,7 @@ class RunStatus(BaseModel):
     incident_id: str
     data_mode: str = "mock"
     data_notices: list[str] = Field(default_factory=list)
+    source_rows: dict | None = None
     visited: list[str] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
     cve_matches: list[CVEMatch] = Field(default_factory=list)

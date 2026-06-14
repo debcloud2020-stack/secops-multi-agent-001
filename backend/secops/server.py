@@ -130,6 +130,7 @@ def _build_status(run_id: str) -> RunStatus:
         incident_id=reg["incident_id"],
         data_mode=v.get("data_mode") or reg["data_mode"],
         data_notices=list(dict.fromkeys(v.get("data_notices", []))),  # de-duped, order-stable
+        source_rows=v.get("source_rows"),
         visited=v.get("visited", []),
         findings=v.get("findings", []),
         cve_matches=_dedupe_cves(v.get("cve_matches", [])),

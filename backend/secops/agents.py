@@ -92,6 +92,64 @@ def route(state: SecOpsState) -> str:
 
 # --- Agent nodes (real, mock-defaulted tools through the guardrail) -------------------
 
+def _source_rows(rows: list[dict]) -> dict:
+    """Compact, JSON-safe summary of the log rows for the dashboard (additive surface only).
+
+    Shape-driven so it stays correct even when live/synthetic fall back to a mock fixture:
+    AzureActivity → ``operations``; the synthetic table → ``incidents``; sign-in rows → ``signins``.
+    ``operations[].count`` is the **summed AzureActivity EventCount** per operation (the panel
+    labels the column "Events"). Lists are capped to stay small.
+    """
+    total = len(rows)
+    if not rows:
+        return {"kind": "empty", "source": "AzureActivity", "count": 0}
+    keys = rows[0].keys()
+
+    if "OperationNameValue" in keys:  # live AzureActivity (or its mock fixture)
+        events: dict[str, int] = {}
+        for r in rows:
+            op = str(r.get("OperationNameValue", ""))
+            events[op] = events.get(op, 0) + int(r.get("EventCount") or 0)
+        top = sorted(events.items(), key=lambda kv: kv[1], reverse=True)[:5]
+        callers = list(dict.fromkeys(r.get("Caller") for r in rows if r.get("Caller")))[:3]
+        ips = list(
+            dict.fromkeys(r.get("CallerIpAddress") for r in rows if r.get("CallerIpAddress"))
+        )[:3]
+        return {
+            "kind": "operations", "source": "AzureActivity", "count": total,
+            "operations": [{"name": n, "count": c} for n, c in top],
+            "callers": callers, "source_ips": ips,
+        }
+
+    if "IncidentId" in keys or "DetectionName" in keys:  # synthetic SecOpsSynthetic_CL
+        return {
+            "kind": "incidents", "source": "SecOpsSynthetic_CL", "count": total,
+            "incidents": [
+                {
+                    "id": str(r.get("IncidentId", "")),
+                    "title": str(r.get("Title", "")),
+                    "detection": str(r.get("DetectionName", "")),
+                    "severity": str(r.get("Severity", "")),
+                }
+                for r in rows[:8]
+            ],
+        }
+
+    # sign-in rows (mock fixture / sign-in fallback)
+    return {
+        "kind": "signins", "source": "SigninLogs", "count": total,
+        "signins": [
+            {
+                "user": str(r.get("UserPrincipalName", "")),
+                "ip": str(r.get("IPAddress", "")),
+                "result": str(r.get("ResultDescription", ""))[:80],
+                "failures": int(r.get("FailureCount") or 0),
+            }
+            for r in rows[:5]
+        ],
+    }
+
+
 def log_monitor(state: SecOpsState) -> dict:
     notices: list[str] = []
     # Live mode queries AzureActivity (real + populated); mock/synthetic use the sign-in
@@ -114,6 +172,7 @@ def log_monitor(state: SecOpsState) -> dict:
         "visited": ["log_monitor"],
         "guardrail_flags": flags,
         "data_notices": notices,
+        "source_rows": _source_rows(rows),
         "cost": cost_update("log_monitor", safe),
     }
 
