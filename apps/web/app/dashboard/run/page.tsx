@@ -112,7 +112,7 @@ export default function RunPage() {
           <div className="space-y-4">
             <div
               className={cn(
-                "flex items-center gap-3 rounded-lg border border-l-4 px-4 py-2.5",
+                "flex items-center gap-3 rounded-xl border border-l-4 border-white/10 bg-white/[0.03] px-4 py-2.5 backdrop-blur-xl",
                 MODE_ACCENT[mode].border,
               )}
             >
@@ -125,7 +125,11 @@ export default function RunPage() {
               </span>
             </div>
             {canApprove && <ApprovalPanel onDecision={(d, ep) => approve(d, ep)} />}
-            <RunResult run={displayed} mode={mode} />
+            <RunResult
+              run={displayed}
+              mode={mode}
+              incidentTitle={incidents.find((i) => i.id === displayed.incident_id)?.title}
+            />
           </div>
         ) : (
           <div className="rounded-xl border border-dashed p-12 text-center text-sm text-muted-foreground">

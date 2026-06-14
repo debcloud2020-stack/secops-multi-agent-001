@@ -8,9 +8,9 @@ export function GuardrailFlags({ flags }: { flags: string[] }) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           {flags.length > 0 ? (
-            <ShieldAlert className="size-4 text-amber-500" />
+            <ShieldAlert className="size-4 text-amber-400" />
           ) : (
-            <ShieldCheck className="size-4 text-emerald-500" />
+            <ShieldCheck className="size-4 text-emerald-400" />
           )}
           Guardrail flags
         </CardTitle>
@@ -23,8 +23,9 @@ export function GuardrailFlags({ flags }: { flags: string[] }) {
             {flags.map((flag, i) => (
               <li
                 key={i}
-                className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-1.5 font-mono text-xs text-amber-700 dark:text-amber-300"
+                className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 font-mono text-xs text-amber-200"
               >
+                <span className="size-2 shrink-0 animate-pulse rounded-full bg-amber-400 text-amber-400 shadow-[0_0_8px_currentColor]" />
                 {flag}
               </li>
             ))}

@@ -14,9 +14,9 @@ import type { ComplianceOut } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const STATUS_CLASS: Record<string, string> = {
-  covered: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-  partial: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
-  gap: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
+  covered: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40",
+  partial: "bg-amber-500/15 text-amber-300 border-amber-500/40",
+  gap: "bg-red-500/15 text-red-300 border-red-500/40",
 };
 
 export default function CompliancePage() {

@@ -12,7 +12,9 @@ export function CostPanel({ cost }: { cost: Cost }) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-base">
           Cost
-          <span className="text-sm font-normal text-muted-foreground">{total} tok</span>
+          <span className="font-mono text-sm font-normal tabular-nums text-cyan-300">
+            {total} tok
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -26,9 +28,9 @@ export function CostPanel({ cost }: { cost: Cost }) {
                   <span>{AGENT_LABELS[node] ?? node}</span>
                   <span className="tabular-nums text-muted-foreground">{tokens}</span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-primary"
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400"
                     style={{ width: `${(tokens / max) * 100}%` }}
                   />
                 </div>
