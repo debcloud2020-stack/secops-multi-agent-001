@@ -1,8 +1,8 @@
 """FastAPI API over the SecOps graph (Phase 3).
 
-A demo-password gate guards every endpoint. Runs execute in a background thread pool so
-progress can be polled; ``GET /runs/{id}`` reads the LangGraph checkpointer (the source of
-truth) via ``get_state``. A human-in-the-loop interrupt pauses approval-required runs;
+The API is open — no auth gate. Runs execute in a background thread pool so progress can be
+polled; ``GET /runs/{id}`` reads the LangGraph checkpointer (the source of truth) via
+``get_state``. A human-in-the-loop interrupt pauses approval-required runs;
 ``POST /runs/{id}/approve`` resumes them with ``Command(resume=...)``.
 
 Single-process by design (in-memory ``MemorySaver`` + run registry). Cross-process polling
@@ -12,13 +12,12 @@ would need a shared checkpointer (Postgres) — deferred to Phase 5.
 from __future__ import annotations
 
 import logging
-import secrets
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Path
+from fastapi import FastAPI, HTTPException, Path
 from fastapi.middleware.cors import CORSMiddleware
 from langgraph.types import Command
 
@@ -46,23 +45,10 @@ _LOCK = threading.Lock()  # guards RUNS reads/writes/iteration across threads
 _EXECUTOR = ThreadPoolExecutor(max_workers=4)
 
 
-# --- Auth ----------------------------------------------------------------------------
+app = FastAPI(title="SecOps Multi-Agent API")
 
-def require_password(authorization: str | None = Header(default=None)) -> None:
-    """Constant-time demo-password gate. Fails closed if DEMO_PASSWORD is unset."""
-    expected = get_settings().demo_password
-    provided = None
-    if authorization and authorization.lower().startswith("bearer "):
-        provided = authorization[7:].strip()
-    if not expected or not provided or not secrets.compare_digest(provided, expected):
-        # Generic message; never echo or log the password.
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-
-app = FastAPI(title="SecOps Multi-Agent API", dependencies=[Depends(require_password)])
-
-# CORS so the browser (Next.js dev on :3000) can call the API. The Authorization header
-# and OPTIONS preflight are allowed; credentials are not used (Bearer header only).
+# CORS so the browser (Next.js dev on :3000) can call the API. The app is open (no auth);
+# OPTIONS preflight is allowed; credentials are not used.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in get_settings().cors_origins.split(",") if o.strip()],

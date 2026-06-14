@@ -1,5 +1,5 @@
-// Fetch wrapper for the Phase 3 API: injects the demo password (Bearer) on every call,
-// reads the base URL from NEXT_PUBLIC_API_URL, and surfaces a typed ApiError.
+// Fetch wrapper for the API: reads the base URL from NEXT_PUBLIC_API_URL and surfaces a
+// typed ApiError. The API is open — no auth header.
 
 import type {
   ComplianceOut,
@@ -11,7 +11,6 @@ import type {
 } from "@/lib/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const PW_KEY = "secops_demo_pw";
 
 export class ApiError extends Error {
   status: number;
@@ -22,30 +21,13 @@ export class ApiError extends Error {
   }
 }
 
-// --- Password storage (sessionStorage; never committed, never in env) ---------------
-
-export function getPassword(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.sessionStorage.getItem(PW_KEY);
-}
-
-export function setPassword(pw: string): void {
-  if (typeof window !== "undefined") window.sessionStorage.setItem(PW_KEY, pw);
-}
-
-export function clearPassword(): void {
-  if (typeof window !== "undefined") window.sessionStorage.removeItem(PW_KEY);
-}
-
 // --- Core request -------------------------------------------------------------------
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const pw = getPassword();
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(pw ? { Authorization: `Bearer ${pw}` } : {}),
       ...(init?.headers ?? {}),
     },
   });

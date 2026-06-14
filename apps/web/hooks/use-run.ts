@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { usePassword } from "@/components/providers/password-provider";
-import { ApiError, approveRun, getRun, startRun } from "@/lib/api";
+import { approveRun, getRun, startRun } from "@/lib/api";
 import type { Decision, RunStatus, RunStatusValue } from "@/lib/types";
 
 const POLL_MS = 1500;
@@ -12,7 +11,6 @@ const ACTIVE: RunStatusValue[] = ["queued", "running"];
 
 /** Drives one run: start → poll every ~1.5s → pause at awaiting_approval/terminal. */
 export function useRun() {
-  const { reauth } = usePassword();
   const [run, setRun] = useState<RunStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
@@ -20,14 +18,10 @@ export function useRun() {
   const [target, setTarget] = useState<{ id: string; nonce: number } | null>(null);
   const nonce = useRef(0);
 
-  const handleError = useCallback(
-    (e: unknown) => {
-      if (e instanceof ApiError && e.status === 401) reauth();
-      setError(e instanceof Error ? e.message : "request failed");
-      setPolling(false);
-    },
-    [reauth],
-  );
+  const handleError = useCallback((e: unknown) => {
+    setError(e instanceof Error ? e.message : "request failed");
+    setPolling(false);
+  }, []);
 
   // The poll loop lives entirely inside the effect — no self-referencing callback.
   useEffect(() => {

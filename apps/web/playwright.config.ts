@@ -1,11 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Local e2e gate for the core run flow. Requires the Phase 3 API running separately
- * (MOCK_MODE=true, DEMO_PASSWORD set). The dev server is started/reused automatically.
+ * Local e2e gate for the core run flow. Requires the API running separately
+ * (MOCK_MODE=true). The dev server is started/reused automatically. The app is open (no auth).
  *
- *   cd backend && DEMO_PASSWORD=changeme uv run python -m secops.app serve
- *   cd apps/web && DEMO_PASSWORD=changeme npx playwright test
+ *   cd backend && uv run python -m secops.app serve
+ *   cd apps/web && npx playwright test
  */
 export default defineConfig({
   testDir: "./e2e",

@@ -5,7 +5,6 @@ import { toast } from "sonner";
 
 import { CveTable } from "@/components/dashboard/cve-table";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { usePassword } from "@/components/providers/password-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,16 +12,14 @@ import { getThreats } from "@/lib/api";
 import type { CVEMatch } from "@/lib/types";
 
 export default function ThreatsPage() {
-  const { authed } = usePassword();
   const [rows, setRows] = useState<CVEMatch[] | null>(null);
   const [q, setQ] = useState("");
 
   useEffect(() => {
-    if (!authed) return;
     getThreats()
       .then(setRows)
       .catch(() => toast.error("Failed to load threats"));
-  }, [authed]);
+  }, []);
 
   const filtered = useMemo(() => {
     if (!rows) return [];

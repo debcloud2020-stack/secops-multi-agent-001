@@ -7,6 +7,21 @@ import pytest
 import secops.config as cfg
 
 
+@pytest.fixture(autouse=True)
+def _hermetic_env(monkeypatch):
+    """Run tests offline + deterministic regardless of a local backend/.env (which may
+    point at real Azure / OpenRouter). Real env vars override the dotenv file in
+    pydantic-settings, so this forces mock mode and clears live creds for every test —
+    matching CI (MOCK_MODE=true) and avoiding accidental paid LLM / cloud calls."""
+    monkeypatch.setenv("MOCK_MODE", "true")
+    monkeypatch.setenv("AZURE_WORKSPACE_ID", "")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "")
+    monkeypatch.setenv("POSTGRES_DSN", "")
+    cfg._settings = None
+    yield
+    cfg._settings = None
+
+
 @pytest.fixture
 def tmp_lancedb(tmp_path, monkeypatch):
     """Point LanceDB (knowledge + memory) at an isolated temp dir for this test."""
@@ -32,20 +47,10 @@ def embed_available():
 
 
 @pytest.fixture
-def demo_password(monkeypatch):
-    """Set the API demo password and reset the cached Settings so it's picked up."""
-    pw = "test-pw-123"
-    monkeypatch.setenv("DEMO_PASSWORD", pw)
-    cfg._settings = None
-    yield pw
-    cfg._settings = None
-
-
-@pytest.fixture
-def api_client(demo_password):
-    """A TestClient plus the auth header dict."""
+def api_client():
+    """A TestClient for the open (no-auth) API."""
     from fastapi.testclient import TestClient
 
     from secops.server import app
 
-    return TestClient(app), {"Authorization": f"Bearer {demo_password}"}
+    return TestClient(app)

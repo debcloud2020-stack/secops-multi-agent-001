@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/dashboard/page-header";
-import { usePassword } from "@/components/providers/password-provider";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -21,15 +20,13 @@ const STATUS_CLASS: Record<string, string> = {
 };
 
 export default function CompliancePage() {
-  const { authed } = usePassword();
   const [data, setData] = useState<ComplianceOut | null>(null);
 
   useEffect(() => {
-    if (!authed) return;
     getCompliance()
       .then(setData)
       .catch(() => toast.error("Failed to load compliance"));
-  }, [authed]);
+  }, []);
 
   return (
     <>

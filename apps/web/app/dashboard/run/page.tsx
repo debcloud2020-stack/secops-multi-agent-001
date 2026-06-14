@@ -9,7 +9,6 @@ import { DataModeToggle } from "@/components/dashboard/data-mode-toggle";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { RunResult } from "@/components/dashboard/run-result";
 import { StatusBadge } from "@/components/dashboard/status-badge";
-import { usePassword } from "@/components/providers/password-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -24,21 +23,19 @@ import { useRun } from "@/hooks/use-run";
 import type { DataMode, IncidentOut } from "@/lib/types";
 
 export default function RunPage() {
-  const { authed } = usePassword();
   const [incidents, setIncidents] = useState<IncidentOut[]>([]);
   const [selected, setSelected] = useState("");
   const [mode, setMode] = useState<DataMode>("mock");
   const { run, error, polling, start, approve } = useRun();
 
   useEffect(() => {
-    if (!authed) return;
     getIncidents()
       .then((list) => {
         setIncidents(list);
         setSelected((s) => s || list[0]?.id || "");
       })
       .catch(() => toast.error("Failed to load incidents"));
-  }, [authed]);
+  }, []);
 
   useEffect(() => {
     if (error) toast.error(error);

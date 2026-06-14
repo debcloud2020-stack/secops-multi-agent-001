@@ -1,11 +1,9 @@
 "use client";
 
-import { History, LayoutDashboard, ListChecks, Lock, PlayCircle, ShieldAlert } from "lucide-react";
+import { History, LayoutDashboard, ListChecks, PlayCircle, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { usePassword } from "@/components/providers/password-provider";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -18,7 +16,6 @@ const LINKS = [
 
 export function DashboardNav() {
   const pathname = usePathname();
-  const { authed, reauth } = usePassword();
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-1 border-b p-3 md:h-dvh md:w-60 md:border-r md:border-b-0">
@@ -48,16 +45,6 @@ export function DashboardNav() {
           );
         })}
       </nav>
-      {authed && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={reauth}
-          className="mt-auto hidden justify-start text-muted-foreground md:flex"
-        >
-          <Lock className="size-4" /> Lock
-        </Button>
-      )}
     </aside>
   );
 }

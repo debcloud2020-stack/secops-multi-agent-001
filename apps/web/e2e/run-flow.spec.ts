@@ -1,17 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-const PASSWORD = process.env.DEMO_PASSWORD ?? "changeme";
-
-test("core run flow: unlock → pick incident → run → rail completes with a plan", async ({
+test("core run flow: open dashboard → pick incident → run → rail completes with a plan", async ({
   page,
 }) => {
+  // The app is open — no password. Go straight to the run page.
   await page.goto("/dashboard/run");
 
-  // One-time password gate.
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Unlock" }).click();
-
-  // The run page loads; choose a straight-through (no-approval) curated incident.
+  // Choose a straight-through (no-approval) curated incident.
   await page.getByRole("combobox").click();
   await page.getByRole("option", { name: /Impossible-travel/i }).click();
 

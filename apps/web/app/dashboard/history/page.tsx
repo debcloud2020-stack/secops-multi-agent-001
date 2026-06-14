@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { RunResult } from "@/components/dashboard/run-result";
 import { StatusBadge } from "@/components/dashboard/status-badge";
-import { usePassword } from "@/components/providers/password-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,7 +24,6 @@ import { listRuns } from "@/lib/api";
 import type { RunSummary } from "@/lib/types";
 
 function HistoryInner() {
-  const { authed } = usePassword();
   const router = useRouter();
   const params = useSearchParams();
   const selectedId = params.get("run_id");
@@ -33,11 +31,10 @@ function HistoryInner() {
   const { run, load } = useRun();
 
   useEffect(() => {
-    if (!authed) return;
     listRuns()
       .then(setRuns)
       .catch(() => toast.error("Failed to load history"));
-  }, [authed]);
+  }, []);
 
   useEffect(() => {
     if (selectedId) void load(selectedId);

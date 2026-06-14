@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 import { PageHeader } from "@/components/dashboard/page-header";
-import { usePassword } from "@/components/providers/password-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCompliance, getIncidents, getRun, getThreats, listRuns } from "@/lib/api";
@@ -20,12 +19,10 @@ interface Kpis {
 }
 
 export default function OverviewPage() {
-  const { authed } = usePassword();
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [coverage, setCoverage] = useState<{ name: string; coverage: number }[]>([]);
 
   useEffect(() => {
-    if (!authed) return;
     (async () => {
       const [incidents, threats, compliance, runs] = await Promise.all([
         getIncidents().catch(() => [] as IncidentOut[]),
@@ -54,7 +51,7 @@ export default function OverviewPage() {
       });
       setCoverage(compliance.frameworks.map((f) => ({ name: f.name, coverage: f.coverage_pct })));
     })();
-  }, [authed]);
+  }, []);
 
   const cards = [
     { label: "Curated incidents", value: kpis?.openIncidents, icon: Activity },

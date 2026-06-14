@@ -66,9 +66,7 @@ class Settings(BaseSettings):
     postgres_dsn: str | None = None
 
     # --- Phase 3: API server ---
-    # Demo password gate for every endpoint (Authorization: Bearer <demo_password>).
-    # If unset, the gate fails closed (every request is rejected).
-    demo_password: str | None = None
+    # The API is open (no auth gate).
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     # Comma-separated browser origins allowed via CORS (for the Next.js dev server).
