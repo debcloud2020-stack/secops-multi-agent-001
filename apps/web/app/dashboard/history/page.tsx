@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ModeBadge } from "@/components/dashboard/mode-badge";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { RunResult } from "@/components/dashboard/run-result";
 import { StatusBadge } from "@/components/dashboard/status-badge";
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { useRun } from "@/hooks/use-run";
 import { listRuns } from "@/lib/api";
-import type { RunSummary } from "@/lib/types";
+import type { DataMode, RunSummary } from "@/lib/types";
 
 function HistoryInner() {
   const router = useRouter();
@@ -52,8 +53,18 @@ function HistoryInner() {
             </Button>
           }
         />
-        <div className="p-6">
-          {run ? <RunResult run={run} /> : <Skeleton className="h-80 w-full" />}
+        <div className="space-y-4 p-6">
+          {run ? (
+            <>
+              <div className="flex items-center gap-3">
+                {run.data_mode && <ModeBadge mode={run.data_mode as DataMode} />}
+                <StatusBadge status={run.status} />
+              </div>
+              <RunResult run={run} mode={run.data_mode as DataMode} />
+            </>
+          ) : (
+            <Skeleton className="h-80 w-full" />
+          )}
         </div>
       </>
     );

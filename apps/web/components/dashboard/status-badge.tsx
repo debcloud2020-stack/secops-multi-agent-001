@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: RunStatusValue }) {
   return (
-    <Badge variant="outline" className={cn("font-medium", STATUS_CLASS[status])}>
+    <Badge
+      variant="outline"
+      className={cn("font-medium", STATUS_CLASS[status], status === "running" && "animate-pulse")}
+    >
       {STATUS_LABEL[status]}
     </Badge>
   );
