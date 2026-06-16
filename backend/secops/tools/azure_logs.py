@@ -8,6 +8,7 @@ it never invents free-text KQL. Mock mode returns fixtures; live mode runs the K
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 
 from secops.config import get_settings
 from secops.tools import load_fixture
@@ -37,7 +38,7 @@ DETECTIONS: dict[str, str] = {
     # AzureActivity is real + populated in a fresh workspace (no Entra P1 needed) — the
     # log_monitor agent uses this in live mode so the dashboard shows real rows.
     "azure_activity": (
-        "AzureActivity | where TimeGenerated > ago(1d) "
+        "AzureActivity | where TimeGenerated > {window} "
         "| summarize EventCount=count() by OperationNameValue, ActivityStatusValue, "
         "Caller, CallerIpAddress "
         "| order by EventCount desc | take 25"
@@ -52,6 +53,17 @@ SYNTHETIC_TABLE = "SecOpsSynthetic_CL"
 
 def detection_names() -> list[str]:
     return list(DETECTIONS)
+
+
+def _lookback(settings) -> tuple[str, timedelta]:
+    """The configured lookback as a matched ``(ago(<h>h) clause, API timespan)`` pair.
+
+    Both halves come from the same ``LOG_LOOKBACK_HOURS`` so the inline KQL filter and the
+    Azure Monitor ``timespan`` agree — otherwise the (more restrictive) timespan silently
+    caps the query and older / recently-seeded rows never appear.
+    """
+    hours = max(1, int(settings.log_lookback_hours))
+    return f"ago({hours}h)", timedelta(hours=hours)
 
 
 def run_detection(
@@ -69,10 +81,12 @@ def run_detection(
         return _mock(name)
 
     settings = get_settings()
+    ago, span = _lookback(settings)
     try:
         if data_mode == "synthetic":
-            return _synthetic(name, settings)
-        return _live(name, DETECTIONS[name], settings)
+            return _synthetic(name, settings, ago, span)
+        kql = DETECTIONS[name].format(window=ago)
+        return _live(kql, settings, span)
     except Exception as exc:  # noqa: BLE001 — never die on stage; fall back to mock.
         log.warning("azure_logs %s query failed for %s (%s); using mock", data_mode, name, exc)
         _note(notices, data_mode, exc)
@@ -91,33 +105,33 @@ def _mock(name: str) -> list[dict]:
     return load_fixture("azure_logs", f"{name}.json")  # type: ignore[return-value]
 
 
-def _synthetic(name: str, settings) -> list[dict]:
+def _synthetic(name: str, settings, ago: str, span: timedelta) -> list[dict]:
     """Query recent rows from the synthetic custom table (seeded via the Logs Ingestion API).
 
     Returns the real seeded incidents projected to the table schema — the agent reasons over
-    them regardless of the requested detection ``name``.
+    them regardless of the requested detection ``name``. ``ago``/``span`` carry the configured
+    lookback (see ``_lookback``).
     """
     if not settings.azure_workspace_id:
         raise RuntimeError("AZURE_WORKSPACE_ID not set (synthetic table query)")
     kql = (
-        f"{SYNTHETIC_TABLE} | where TimeGenerated > ago(7d) "
+        f"{SYNTHETIC_TABLE} | where TimeGenerated > {ago} "
         "| project TimeGenerated, IncidentId, Title, DetectionName, Severity, "
         "UserPrincipalName, SourceIp, Description, EventCount "
         "| order by TimeGenerated desc | take 50"
     )
-    return _live(name, kql, settings)
+    return _live(kql, settings, span)
 
 
-def _live(name: str, kql: str, settings) -> list[dict]:
+def _live(kql: str, settings, span: timedelta) -> list[dict]:
     from azure.identity import DefaultAzureCredential
     from azure.monitor.query import LogsQueryClient, LogsQueryStatus
 
     if not settings.azure_workspace_id:
         raise RuntimeError("AZURE_WORKSPACE_ID not set")
     client = LogsQueryClient(DefaultAzureCredential())
-    from datetime import timedelta
 
-    resp = client.query_workspace(settings.azure_workspace_id, kql, timespan=timedelta(days=1))
+    resp = client.query_workspace(settings.azure_workspace_id, kql, timespan=span)
     if resp.status != LogsQueryStatus.SUCCESS or not resp.tables:
         raise RuntimeError(f"query status {resp.status}")
     table = resp.tables[0]

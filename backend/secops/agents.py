@@ -92,17 +92,29 @@ def route(state: SecOpsState) -> str:
 
 # --- Agent nodes (real, mock-defaulted tools through the guardrail) -------------------
 
-def _source_rows(rows: list[dict]) -> dict:
+def _window_label(hours: int) -> str:
+    """Human label for a lookback window, e.g. 168 → 'last 7 days', 24 → 'last 24 hours'."""
+    hours = max(1, int(hours))
+    if hours % 24 == 0:
+        days = hours // 24
+        return f"last {days} day{'s' if days != 1 else ''}"
+    return f"last {hours} hour{'s' if hours != 1 else ''}"
+
+
+def _source_rows(rows: list[dict], window: str | None = None) -> dict:
     """Compact, JSON-safe summary of the log rows for the dashboard (additive surface only).
 
     Shape-driven so it stays correct even when live/synthetic fall back to a mock fixture:
     AzureActivity → ``operations``; the synthetic table → ``incidents``; sign-in rows → ``signins``.
     ``operations[].count`` is the **summed AzureActivity EventCount** per operation (the panel
-    labels the column "Events"). Lists are capped to stay small.
+    labels the column "Events"). Lists are capped to stay small. ``window`` (the period queried,
+    e.g. "last 7 days") is added only when provided — mock runs omit it, leaving the dict
+    byte-for-byte unchanged.
     """
     total = len(rows)
+    extra = {"window": window} if window else {}
     if not rows:
-        return {"kind": "empty", "source": "AzureActivity", "count": 0}
+        return {"kind": "empty", "source": "AzureActivity", "count": 0, **extra}
     keys = rows[0].keys()
 
     if "OperationNameValue" in keys:  # live AzureActivity (or its mock fixture)
@@ -118,7 +130,7 @@ def _source_rows(rows: list[dict]) -> dict:
         return {
             "kind": "operations", "source": "AzureActivity", "count": total,
             "operations": [{"name": n, "count": c} for n, c in top],
-            "callers": callers, "source_ips": ips,
+            "callers": callers, "source_ips": ips, **extra,
         }
 
     if "IncidentId" in keys or "DetectionName" in keys:  # synthetic SecOpsSynthetic_CL
@@ -133,6 +145,7 @@ def _source_rows(rows: list[dict]) -> dict:
                 }
                 for r in rows[:8]
             ],
+            **extra,
         }
 
     # sign-in rows (mock fixture / sign-in fallback)
@@ -147,6 +160,7 @@ def _source_rows(rows: list[dict]) -> dict:
             }
             for r in rows[:5]
         ],
+        **extra,
     }
 
 
@@ -156,6 +170,13 @@ def log_monitor(state: SecOpsState) -> dict:
     # detection name (synthetic ignores it and queries the seeded custom table).
     detection = "azure_activity" if state.data_mode == "live" else "failed_signins_burst"
     rows = azure_logs.run_detection(detection, state.data_mode, notices)
+    # Surface the queried period for live/synthetic (real KQL queries); mock has no real
+    # query window, so it stays unchanged.
+    window = (
+        _window_label(get_settings().log_lookback_hours)
+        if state.data_mode != "mock"
+        else None
+    )
     safe, flags = guardrail.scan_obj(rows)  # reason over `safe`, never raw rows
     note = " Guardrail flagged injected content in a log row." if flags else ""
     finding = Finding(
@@ -172,7 +193,7 @@ def log_monitor(state: SecOpsState) -> dict:
         "visited": ["log_monitor"],
         "guardrail_flags": flags,
         "data_notices": notices,
-        "source_rows": _source_rows(rows),
+        "source_rows": _source_rows(rows, window),
         "cost": cost_update("log_monitor", safe),
     }
 

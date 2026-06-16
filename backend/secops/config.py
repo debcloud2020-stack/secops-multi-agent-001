@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     # Optional live-path settings (only used when mock_mode is false).
     azure_workspace_id: str | None = None
     nvd_api_key: str | None = None
+    # Log Monitor lookback window for live/synthetic KQL queries (env LOG_LOOKBACK_HOURS).
+    # Drives both the inline `ago(<h>h)` filter and the API `timespan` so older / recently
+    # seeded rows still appear. Default 168 = 7 days.
+    log_lookback_hours: int = 168
 
     # Synthetic data ingestion (Logs Ingestion API → SecOpsSynthetic_CL custom table).
     # Used by scripts/seed_synthetic.py and the 'synthetic' data_mode query path.

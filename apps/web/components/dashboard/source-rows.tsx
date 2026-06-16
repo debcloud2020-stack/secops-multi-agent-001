@@ -96,7 +96,9 @@ export function SourceRowsPanel({ data, mode }: { data: SourceRows; mode?: DataM
         <CardTitle className="text-base">
           Evidence reviewed
           <span className="ml-2 text-sm font-normal text-muted-foreground">
-            {data.source} · {data.count} {data.count === 1 ? "row" : "rows"}
+            {data.source}
+            {data.window ? ` · ${data.window}` : ""} · {data.count}{" "}
+            {data.count === 1 ? "row" : "rows"}
           </span>
         </CardTitle>
         <p className="text-xs text-muted-foreground">

@@ -54,6 +54,7 @@ export interface SourceRows {
   kind: "operations" | "incidents" | "signins" | "empty" | string;
   source: string;
   count: number;
+  window?: string; // period queried, e.g. "last 7 days" (live/synthetic only)
   operations?: { name: string; count: number }[];
   callers?: string[];
   source_ips?: string[];
